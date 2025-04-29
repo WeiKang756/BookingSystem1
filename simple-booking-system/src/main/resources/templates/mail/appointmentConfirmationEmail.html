@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="en">
+  <head>
+    <title th:text="#{email.appointment.confirmation.title}">Appointment Confirmation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="icon" th:href="@{|${baseUrl}/favicon.ico|}" />
+  </head>
+  <body>
+    <p th:text="#{email.greeting(${user.login})}">Dear User,</p>
+    
+    <p>
+      <span th:text="#{email.appointment.confirmation.text1}">Your appointment has been confirmed.</span>
+    </p>
+    
+    <div>
+      <h3 th:text="#{email.appointment.details}">Appointment Details</h3>
+      <table border="0" style="border-collapse: collapse; width: 100%; max-width: 500px; margin-bottom: 20px;">
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <strong th:text="#{email.appointment.service}">Service:</strong>
+          </td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;" th:text="${serviceName}">
+            Service Name
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <strong th:text="#{email.appointment.date}">Date & Time:</strong>
+          </td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;" th:text="${appointmentDateTime}">
+            Appointment Date and Time
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <strong th:text="#{email.appointment.status}">Status:</strong>
+          </td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <span 
+              style="background-color: #d1e7dd; color: #0f5132; padding: 3px 8px; border-radius: 4px; font-size: 12px;"
+              th:text="${appointment.status}">SCHEDULED</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
+    <p>
+      <span th:text="#{email.appointment.cancellation.policy}">Please note that cancellations are only allowed up to 24 hours before your scheduled appointment time.</span>
+    </p>
+    
+    <p>
+      <a th:href="@{|${baseUrl}/appointment/${appointment.id}|}"
+         th:text="#{email.appointment.view}">View Appointment</a>
+    </p>
+    
+    <p>
+      <span th:text="#{email.appointment.confirmation.text2}">Thank you for booking with us. We look forward to seeing you!</span>
+    </p>
+    
+    <p>
+      <span th:text="#{email.goodbye}">Regards,</span>
+      <br />
+      <em th:text="#{email.signature}">Simple Booking System Team</em>
+    </p>
+  </body>
+</html> 

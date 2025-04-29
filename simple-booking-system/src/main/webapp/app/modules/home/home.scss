@@ -1,0 +1,46 @@
+/* ==========================================================================
+Main page styles
+========================================================================== */
+.hipster {
+  display: inline-block;
+  width: 100%;
+  height: 497px;
+  background: url('/content/images/jhipster_family_member_2.svg') no-repeat center top;
+  background-size: contain;
+}
+
+.booking-system-home {
+  .hero-section {
+    padding: 4rem 1rem;
+    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/content/images/booking-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    border-radius: 0.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .feature-card {
+    transition: transform 0.3s ease;
+    border: none;
+    
+    &:hover {
+      transform: translateY(-10px);
+    }
+  }
+
+  .step-circle {
+    width: 60px;
+    height: 60px;
+    background-color: #3e8acc;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+  }
+}
+
+/* jhipster-needle-scss-add-main JHipster will add new css style */

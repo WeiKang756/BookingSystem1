@@ -1,0 +1,30 @@
+// Booking System JDL
+entity Appointment {
+startTime Instant required,
+endTime Instant required,
+status AppointmentStatus required
+}
+entity Service {
+name String required minlength(3) maxlength(50),
+description TextBlob,
+price BigDecimal required min(0)
+}
+enum AppointmentStatus {
+REQUESTED, // New status for initial booking request
+SCHEDULED,
+COMPLETED,
+CANCELLED
+}
+relationship ManyToOne {
+Appointment{user(login) required} to User with builtInEntity,
+Appointment{service(name)} to Service
+}
+service Appointment, Service with serviceClass
+paginate Appointment, Service with pagination
+dto Appointment, Service with mapstruct
+// No changes to entities, relationships, or options were requested.
+// The only change is the addition of the REQUESTED status to the AppointmentStatus enum
+// to reflect the workflow described in the updated user story.  This addresses the
+// admin approval requirement.  Further implementation details (email notifications,
+// cancellation logic, preventing overlaps) will be handled in the application code,
+// not in the JDL.

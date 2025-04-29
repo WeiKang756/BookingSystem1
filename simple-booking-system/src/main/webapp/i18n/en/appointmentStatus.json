@@ -1,0 +1,11 @@
+{
+  "simpleBookingSystemApp": {
+    "AppointmentStatus": {
+      "null": "",
+      "REQUESTED": "REQUESTED",
+      "SCHEDULED": "SCHEDULED",
+      "COMPLETED": "COMPLETED",
+      "CANCELLED": "CANCELLED"
+    }
+  }
+}
