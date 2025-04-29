@@ -21,6 +21,7 @@
       "startTime": "Start Time",
       "endTime": "End Time",
       "status": "Status",
+      "specialNeeds": "Special Needs",
       "user": "User",
       "service": "Service"
     }

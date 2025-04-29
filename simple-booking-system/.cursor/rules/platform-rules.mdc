@@ -5,8 +5,8 @@ alwaysApply: false
 ---
 ```json
 {
-  "name": "Simple Online Booking System",
-  "description": "Guides the AI to generate code for a simple online booking system, focusing on user convenience, robust booking management, and clear communication.",
+  "name": "Online Appointment Booking Platform",
+  "description": "Guides the AI to understand and generate code for an online appointment booking platform with admin approval and special needs accommodation, focusing on a user-friendly and accessible experience.",
   "triggers": [
     {
       "type": "file_extension",
@@ -14,54 +14,57 @@ alwaysApply: false
     },
     {
       "type": "file_content",
-      "contains": ["booking", "appointment", "schedule", "calendar", "availability", "time slot", "confirmation", "cancellation", "customer", "service"]
+      "contains": ["appointment", "booking", "schedule", "calendar", "availability", "confirmation", "cancellation", "special needs", "accommodation", "admin approval", "customer"]
     },
     {
       "type": "prompt_content",
-      "contains": ["online booking", "appointment scheduling", "booking system", "manage appointments", "calendar view", "booking confirmation", "cancel appointment"]
+      "contains": ["online booking", "appointment scheduling", "special needs accommodation", "admin approval", "manage appointments", "booking system"]
     }
   ],
   "actions": [
     {
       "type": "set_context",
       "context": {
-        "domain": "Online Booking System",
-        "purpose": "Enabling customers to easily schedule appointments online.",
+        "domain": "Online Appointment Booking",
+        "purpose": "Facilitating online appointment booking with special needs considerations and admin oversight.",
         "features": [
           "Time Slot Management",
-          "Booking Creation",
-          "Booking Confirmation (Email)",
-          "Booking Cancellation",
-          "Appointment Management",
-          "Availability Search",
-          "User Authentication",
-          "Input Validation",
-          "Prevent Double Booking"
+          "Booking Requests",
+          "Special Needs Accommodation Requests",
+          "Admin Approval Workflow",
+          "Automated Email Confirmations (post-approval)",
+          "Cancellation Management (24-hour window)",
+          "User Account Management",
+          "Admin Panel for Booking Management",
+          "Search and Filtering Appointments",
+          "Reporting and Analytics (optional)"
         ],
-        "target_audience": "Customers",
-        "ui_ux_guidelines": {
-          "design_system": "Use a consistent and modern design system (e.g., Material Design, Fluent Design, or a custom one) that aligns with the chosen framework's best practices.",
-          "responsiveness": "Ensure the UI is fully responsive across different devices (desktops, tablets, mobile phones).",
-          "interactivity": "Incorporate interactive elements like calendar selection, modals for booking details, and real-time availability updates.",
-          "accessibility": "Follow accessibility guidelines (WCAG) to ensure the platform is usable by people with disabilities.",
-          "user_flow": "Design intuitive user flows for viewing availability, selecting a time slot, filling out booking details, and managing existing bookings.",
-          "performance": "Optimize the UI for fast loading times and smooth performance, especially for calendar interactions.",
-          "feedback": "Provide clear and immediate feedback to user actions (e.g., loading indicators, success/error messages upon booking/cancellation).",
-          "consistency": "Maintain consistent styling and behavior across all pages and components.",
-          "modern_aesthetics": "Utilize modern UI patterns, clean layouts, and a visually appealing color palette."
-        },
+        "target_audience": ["Customers", "Administrators"],
         "business_rules": {
-          "no_overlap": "Bookings should not overlap.",
-          "confirmation_email": "A confirmation email should be sent upon successful booking.",
-          "cancellation_window": "Cancellations are allowed up to 24 hours before the appointment time."
+          "overlap_prevention": "Appointments cannot overlap.",
+          "confirmation_email": "Confirmation emails are sent only after admin approval.",
+          "cancellation_window": "Cancellations are allowed up to 24 hours before the appointment time.",
+          "admin_approval": "Bookings require admin approval before confirmation.",
+          "special_needs": "Customers can specify special needs during booking.",
+          "booking_status_modification": "Only admins can modify booking status."
+        },
+        "ui_ux_guidelines": {
+          "design_system": "Use a consistent and modern design system (e.g., Material Design, Fluent Design, or a custom one).",
+          "responsiveness": "Ensure the UI is responsive across different devices.",
+          "interactivity": "Use interactive elements (e.g., calendar view, modals) to enhance user experience.",
+          "accessibility": "Follow accessibility guidelines (WCAG).",
+          "user_flow": "Design intuitive user flows for booking and managing appointments.",
+          "performance": "Optimize for fast loading times.",
+          "feedback": "Provide clear feedback to user actions.",
+          "consistency": "Maintain consistent styling and behavior.",
+          "modern_aesthetics": "Utilize modern UI patterns and a visually appealing design."
         }
       }
     },
     {
-        "type":"add_instruction",
-        "instruction":"When generating UI code, prioritize a user-friendly calendar view for selecting time slots, a clear and concise booking form, and a confirmation page with essential details.  Ensure the UI is responsive and adheres to accessibility guidelines.  For backend code, focus on preventing double bookings, enforcing the 24-hour cancellation window, and ensuring email confirmations are sent reliably. Implement robust input validation to handle invalid data gracefully."
+      "type": "add_instruction",
+      "instruction": "When generating code, adhere to the defined business rules and UI/UX guidelines. Prioritize clear error handling and user feedback.  Ensure the 24-hour cancellation window and admin approval workflow are correctly implemented.  Pay attention to special needs accommodation handling during booking and management by admins. For backend code, focus on efficient database interactions and secure data handling."
     }
   ]
 }
-
-
+```

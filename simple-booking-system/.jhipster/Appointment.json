@@ -20,6 +20,10 @@
       "fieldType": "AppointmentStatus",
       "fieldValidateRules": ["required"],
       "fieldValues": "REQUESTED,SCHEDULED,COMPLETED,CANCELLED"
+    },
+    {
+      "fieldName": "specialNeeds",
+      "fieldType": "TextBlob"
     }
   ],
   "name": "Appointment",

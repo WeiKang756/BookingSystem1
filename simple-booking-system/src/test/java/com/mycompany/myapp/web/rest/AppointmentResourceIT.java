@@ -57,6 +57,9 @@ class AppointmentResourceIT {
     private static final AppointmentStatus DEFAULT_STATUS = AppointmentStatus.REQUESTED;
     private static final AppointmentStatus UPDATED_STATUS = AppointmentStatus.SCHEDULED;
 
+    private static final String DEFAULT_SPECIAL_NEEDS = "AAAAAAAAAA";
+    private static final String UPDATED_SPECIAL_NEEDS = "BBBBBBBBBB";
+
     private static final String ENTITY_API_URL = "/api/appointments";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
@@ -98,7 +101,11 @@ class AppointmentResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static Appointment createEntity(EntityManager em) {
-        Appointment appointment = new Appointment().startTime(DEFAULT_START_TIME).endTime(DEFAULT_END_TIME).status(DEFAULT_STATUS);
+        Appointment appointment = new Appointment()
+            .startTime(DEFAULT_START_TIME)
+            .endTime(DEFAULT_END_TIME)
+            .status(DEFAULT_STATUS)
+            .specialNeeds(DEFAULT_SPECIAL_NEEDS);
         // Add required entity
         User user = UserResourceIT.createEntity();
         em.persist(user);
@@ -114,7 +121,11 @@ class AppointmentResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static Appointment createUpdatedEntity(EntityManager em) {
-        Appointment updatedAppointment = new Appointment().startTime(UPDATED_START_TIME).endTime(UPDATED_END_TIME).status(UPDATED_STATUS);
+        Appointment updatedAppointment = new Appointment()
+            .startTime(UPDATED_START_TIME)
+            .endTime(UPDATED_END_TIME)
+            .status(UPDATED_STATUS)
+            .specialNeeds(UPDATED_SPECIAL_NEEDS);
         // Add required entity
         User user = UserResourceIT.createEntity();
         em.persist(user);
@@ -243,7 +254,8 @@ class AppointmentResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(appointment.getId().intValue())))
             .andExpect(jsonPath("$.[*].startTime").value(hasItem(DEFAULT_START_TIME.toString())))
             .andExpect(jsonPath("$.[*].endTime").value(hasItem(DEFAULT_END_TIME.toString())))
-            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
+            .andExpect(jsonPath("$.[*].specialNeeds").value(hasItem(DEFAULT_SPECIAL_NEEDS)));
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -277,7 +289,8 @@ class AppointmentResourceIT {
             .andExpect(jsonPath("$.id").value(appointment.getId().intValue()))
             .andExpect(jsonPath("$.startTime").value(DEFAULT_START_TIME.toString()))
             .andExpect(jsonPath("$.endTime").value(DEFAULT_END_TIME.toString()))
-            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()));
+            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
+            .andExpect(jsonPath("$.specialNeeds").value(DEFAULT_SPECIAL_NEEDS));
     }
 
     @Test
@@ -299,7 +312,11 @@ class AppointmentResourceIT {
         Appointment updatedAppointment = appointmentRepository.findById(appointment.getId()).orElseThrow();
         // Disconnect from session so that the updates on updatedAppointment are not directly saved in db
         em.detach(updatedAppointment);
-        updatedAppointment.startTime(UPDATED_START_TIME).endTime(UPDATED_END_TIME).status(UPDATED_STATUS);
+        updatedAppointment
+            .startTime(UPDATED_START_TIME)
+            .endTime(UPDATED_END_TIME)
+            .status(UPDATED_STATUS)
+            .specialNeeds(UPDATED_SPECIAL_NEEDS);
         AppointmentDTO appointmentDTO = appointmentMapper.toDto(updatedAppointment);
 
         restAppointmentMockMvc
@@ -389,7 +406,11 @@ class AppointmentResourceIT {
         Appointment partialUpdatedAppointment = new Appointment();
         partialUpdatedAppointment.setId(appointment.getId());
 
-        partialUpdatedAppointment.startTime(UPDATED_START_TIME).endTime(UPDATED_END_TIME).status(UPDATED_STATUS);
+        partialUpdatedAppointment
+            .startTime(UPDATED_START_TIME)
+            .endTime(UPDATED_END_TIME)
+            .status(UPDATED_STATUS)
+            .specialNeeds(UPDATED_SPECIAL_NEEDS);
 
         restAppointmentMockMvc
             .perform(
@@ -420,7 +441,11 @@ class AppointmentResourceIT {
         Appointment partialUpdatedAppointment = new Appointment();
         partialUpdatedAppointment.setId(appointment.getId());
 
-        partialUpdatedAppointment.startTime(UPDATED_START_TIME).endTime(UPDATED_END_TIME).status(UPDATED_STATUS);
+        partialUpdatedAppointment
+            .startTime(UPDATED_START_TIME)
+            .endTime(UPDATED_END_TIME)
+            .status(UPDATED_STATUS)
+            .specialNeeds(UPDATED_SPECIAL_NEEDS);
 
         restAppointmentMockMvc
             .perform(

@@ -70,13 +70,11 @@ export const approveAppointment = createAsyncThunk(
   'appointment/approve',
   async (id: string | number, thunkAPI) => {
     try {
-      // console.log(`Approving appointment ${id}`);
       // First try the PUT endpoint
       const requestUrl = `${apiUrl}/${id}/approve`;
       try {
         // Use axios as it has auth interceptors configured
         const result = await axios.put<IAppointment>(requestUrl, {});
-        // console.log('Approved appointment successfully', result);
         thunkAPI.dispatch(getEntities({}));
         return result;
       } catch (putError) {
@@ -84,7 +82,6 @@ export const approveAppointment = createAsyncThunk(
         // Fallback to GET endpoint
         const fallbackUrl = `${apiUrl}/${id}/approve-test`;
         const fallbackResult = await axios.get<IAppointment>(fallbackUrl);
-        // console.log('Approved appointment via fallback', fallbackResult);
         thunkAPI.dispatch(getEntities({}));
         return fallbackResult;
       }

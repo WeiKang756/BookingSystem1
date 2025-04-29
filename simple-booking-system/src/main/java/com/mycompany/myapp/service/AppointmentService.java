@@ -129,8 +129,9 @@ public class AppointmentService {
     @Transactional
     public Optional<AppointmentDTO> approveAppointment(Long id) {
         LOG.debug("Request to approve Appointment : {}", id);
-        
-        return appointmentRepository.findById(id)
+
+        return appointmentRepository
+            .findById(id)
             .map(appointment -> {
                 LOG.info("Found appointment: {}, current status: {}", id, appointment.getStatus());
                 if (appointment.getStatus() == AppointmentStatus.REQUESTED) {

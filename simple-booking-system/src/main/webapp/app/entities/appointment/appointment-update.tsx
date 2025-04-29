@@ -75,9 +75,9 @@ export const AppointmentUpdate = () => {
       ? {
           startTime: displayDefaultDateTime(),
           endTime: displayDefaultDateTime(),
-          status: 'REQUESTED',
         }
       : {
+          status: 'REQUESTED',
           ...appointmentEntity,
           startTime: convertDateTimeFromServer(appointmentEntity.startTime),
           endTime: convertDateTimeFromServer(appointmentEntity.endTime),
@@ -145,6 +145,13 @@ export const AppointmentUpdate = () => {
                   </option>
                 ))}
               </ValidatedField>
+              <ValidatedField
+                label={translate('simpleBookingSystemApp.appointment.specialNeeds')}
+                id="appointment-specialNeeds"
+                name="specialNeeds"
+                data-cy="specialNeeds"
+                type="textarea"
+              />
               <ValidatedField
                 id="appointment-user"
                 name="user"

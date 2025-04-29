@@ -1,6 +1,7 @@
 package com.mycompany.myapp.service.dto;
 
 import com.mycompany.myapp.domain.enumeration.AppointmentStatus;
+import jakarta.persistence.Lob;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;
@@ -22,6 +23,9 @@ public class AppointmentDTO implements Serializable {
 
     @NotNull
     private AppointmentStatus status;
+
+    @Lob
+    private String specialNeeds;
 
     @NotNull
     private UserDTO user;
@@ -58,6 +62,14 @@ public class AppointmentDTO implements Serializable {
 
     public void setStatus(AppointmentStatus status) {
         this.status = status;
+    }
+
+    public String getSpecialNeeds() {
+        return specialNeeds;
+    }
+
+    public void setSpecialNeeds(String specialNeeds) {
+        this.specialNeeds = specialNeeds;
     }
 
     public UserDTO getUser() {
@@ -105,6 +117,7 @@ public class AppointmentDTO implements Serializable {
             ", startTime='" + getStartTime() + "'" +
             ", endTime='" + getEndTime() + "'" +
             ", status='" + getStatus() + "'" +
+            ", specialNeeds='" + getSpecialNeeds() + "'" +
             ", user=" + getUser() +
             ", service=" + getService() +
             "}";

@@ -74,6 +74,12 @@ export const AppointmentDetail = () => {
           </dt>
           <dd>{appointmentEntity.status}</dd>
           <dt>
+            <span id="specialNeeds">
+              <Translate contentKey="simpleBookingSystemApp.appointment.specialNeeds">Special Needs</Translate>
+            </span>
+          </dt>
+          <dd>{appointmentEntity.specialNeeds}</dd>
+          <dt>
             <Translate contentKey="simpleBookingSystemApp.appointment.user">User</Translate>
           </dt>
           <dd>{appointmentEntity.user ? appointmentEntity.user.login : ''}</dd>

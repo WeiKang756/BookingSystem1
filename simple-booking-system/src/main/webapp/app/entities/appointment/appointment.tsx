@@ -150,6 +150,10 @@ export const Appointment = () => {
                   <Translate contentKey="simpleBookingSystemApp.appointment.status">Status</Translate>{' '}
                   <FontAwesomeIcon icon={getSortIconByFieldName('status')} />
                 </th>
+                <th className="hand" onClick={sort('specialNeeds')}>
+                  <Translate contentKey="simpleBookingSystemApp.appointment.specialNeeds">Special Needs</Translate>{' '}
+                  <FontAwesomeIcon icon={getSortIconByFieldName('specialNeeds')} />
+                </th>
                 <th>
                   <Translate contentKey="simpleBookingSystemApp.appointment.user">User</Translate> <FontAwesomeIcon icon="sort" />
                 </th>
@@ -174,6 +178,7 @@ export const Appointment = () => {
                   <td>
                     <Translate contentKey={`simpleBookingSystemApp.AppointmentStatus.${appointment.status}`} />
                   </td>
+                  <td>{appointment.specialNeeds}</td>
                   <td>{appointment.user ? appointment.user.login : ''}</td>
                   <td>{appointment.service ? <Link to={`/service/${appointment.service.id}`}>{appointment.service.name}</Link> : ''}</td>
                   <td className="text-end">

@@ -1,10 +1,10 @@
 package com.mycompany.myapp.web.rest;
 
 import com.mycompany.myapp.repository.AppointmentRepository;
+import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.service.AppointmentService;
 import com.mycompany.myapp.service.dto.AppointmentDTO;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
-import com.mycompany.myapp.security.AuthoritiesConstants;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -176,11 +176,11 @@ public class AppointmentResource {
     /**
      * {@code DELETE  /appointments/:id} : delete the "id" appointment.
      *
-     * @param id the id of the appointmentDTO to delete.
+     * @param id the id of the appointment to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAppointment(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteAppointment(@PathVariable Long id) {
         LOG.debug("REST request to delete Appointment : {}", id);
         appointmentService.delete(id);
         return ResponseEntity.noContent()
@@ -200,22 +200,19 @@ public class AppointmentResource {
     public ResponseEntity<AppointmentDTO> approveAppointment(@PathVariable("id") Long id) {
         LOG.debug("REST request to approve Appointment : {}", id);
         LOG.info("Approving appointment with ID: {}", id);
-        
-        Optional<AppointmentDTO> result = appointmentService.approveAppointment(id);
-        
-        if (result.isPresent()) {
-            LOG.info("Successfully approved appointment: {}", result.get());
-            return ResponseUtil.wrapOrNotFound(
-                result,
-                HeaderUtil.createAlert(applicationName, "Appointment approved", id.toString())
-            );
-        } else {
-            LOG.warn("Failed to approve appointment with ID: {}", id);
-            return ResponseUtil.wrapOrNotFound(
-                result,
-                HeaderUtil.createAlert(applicationName, "Appointment not found or not in REQUESTED state", id.toString())
-            );
-        }
+
+        return appointmentService
+            .approveAppointment(id)
+            .map(result -> {
+                LOG.info("Successfully approved appointment: {}", result);
+                return ResponseEntity.ok()
+                    .headers(HeaderUtil.createAlert(applicationName, "Appointment approved", id.toString()))
+                    .body(result);
+            })
+            .orElseThrow(() -> {
+                LOG.warn("Failed to approve appointment with ID: {}", id);
+                return new BadRequestAlertException("Appointment not found or not in REQUESTED state", ENTITY_NAME, "notfound");
+            });
     }
 
     /**
@@ -226,21 +223,21 @@ public class AppointmentResource {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Void> approveAppointmentTest(@PathVariable("id") Long id) {
         LOG.info("REST request to test approve Appointment : {}", id);
-        
-        Optional<AppointmentDTO> result = appointmentService.approveAppointment(id);
-        
-        if (result.isPresent()) {
-            LOG.info("Test: Successfully approved appointment: {}", result.get());
-            // Redirect to the appointments page
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Location", "/appointment");
-            return ResponseEntity.status(302).headers(headers).build();
-        } else {
+
+        try {
+            appointmentService
+                .approveAppointment(id)
+                .orElseThrow(() -> new BadRequestAlertException("Appointment not found or not in REQUESTED state", ENTITY_NAME, "notfound")
+                );
+
+            LOG.info("Test: Successfully approved appointment");
+        } catch (Exception e) {
             LOG.warn("Test: Failed to approve appointment with ID: {}", id);
-            // Redirect to the appointments page even if there's a failure
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Location", "/appointment");
-            return ResponseEntity.status(302).headers(headers).build();
         }
+
+        // Redirect to the appointments page regardless of success/failure
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Location", "/appointment");
+        return ResponseEntity.status(302).headers(headers).build();
     }
 }

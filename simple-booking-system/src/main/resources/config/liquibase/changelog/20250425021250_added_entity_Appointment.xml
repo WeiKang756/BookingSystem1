@@ -23,6 +23,9 @@
             <column name="status" type="varchar(255)">
                 <constraints nullable="false" />
             </column>
+            <column name="special_needs" type="${clobType}">
+                <constraints nullable="true" />
+            </column>
             <column name="user_id" type="bigint">
                 <constraints nullable="false" />
             </column>
@@ -55,6 +58,7 @@
             <column name="start_time" type="date"/>
             <column name="end_time" type="date"/>
             <column name="status" type="string"/>
+            <column name="special_needs" type="clob"/>
             <column name="user_id" type="numeric"/>
             <!-- jhipster-needle-liquibase-add-loadcolumn - JHipster (and/or extensions) can add load columns here -->
         </loadData>
