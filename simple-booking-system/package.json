@@ -44,6 +44,7 @@
     "jest:update": "npm run jest -- --updateSnapshot",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
+    "prettier:format": "prettier --write \"{,src/**/,webpack/}*.{md,json,ts,tsx,css,scss,java}\"",
     "services:up": "docker compose -f src/main/docker/services.yml up --wait",
     "start": "npm run webapp:dev --",
     "start-tls": "npm run webapp:dev -- --env tls",
