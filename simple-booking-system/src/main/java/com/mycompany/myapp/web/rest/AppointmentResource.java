@@ -1,10 +1,12 @@
 package com.mycompany.myapp.web.rest;
 
+import com.mycompany.myapp.domain.enumeration.AppointmentStatus;
 import com.mycompany.myapp.repository.AppointmentRepository;
+import com.mycompany.myapp.security.AuthoritiesConstants;
+import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.AppointmentService;
 import com.mycompany.myapp.service.dto.AppointmentDTO;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
-import com.mycompany.myapp.security.AuthoritiesConstants;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -62,10 +64,18 @@ public class AppointmentResource {
         if (appointmentDTO.getId() != null) {
             throw new BadRequestAlertException("A new appointment cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        appointmentDTO = appointmentService.save(appointmentDTO);
-        return ResponseEntity.created(new URI("/api/appointments/" + appointmentDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString()))
-            .body(appointmentDTO);
+
+        // For new appointments created by regular users, ensure status is set to REQUESTED
+        appointmentDTO.setStatus(AppointmentStatus.REQUESTED);
+
+        try {
+            appointmentDTO = appointmentService.save(appointmentDTO);
+            return ResponseEntity.created(new URI("/api/appointments/" + appointmentDTO.getId()))
+                .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString()))
+                .body(appointmentDTO);
+        } catch (IllegalStateException e) {
+            throw new BadRequestAlertException(e.getMessage(), ENTITY_NAME, "overlappingappointment");
+        }
     }
 
     /**
@@ -95,10 +105,32 @@ public class AppointmentResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        appointmentDTO = appointmentService.update(appointmentDTO);
-        return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString()))
-            .body(appointmentDTO);
+        // Get the current appointment to check for status changes
+        Optional<AppointmentDTO> existingAppointmentOpt = appointmentService.findOne(id);
+
+        if (existingAppointmentOpt.isPresent()) {
+            AppointmentDTO existingAppointment = existingAppointmentOpt.get();
+
+            // Only admins can change appointment status
+            boolean isStatusChange = !Objects.equals(existingAppointment.getStatus(), appointmentDTO.getStatus());
+
+            if (isStatusChange && !isCurrentUserAdmin()) {
+                throw new BadRequestAlertException(
+                    "Only administrators can change appointment status",
+                    ENTITY_NAME,
+                    "statuschangenotallowed"
+                );
+            }
+        }
+
+        try {
+            appointmentDTO = appointmentService.update(appointmentDTO);
+            return ResponseEntity.ok()
+                .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString()))
+                .body(appointmentDTO);
+        } catch (IllegalStateException e) {
+            throw new BadRequestAlertException(e.getMessage(), ENTITY_NAME, "updateerror");
+        }
     }
 
     /**
@@ -129,12 +161,36 @@ public class AppointmentResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        Optional<AppointmentDTO> result = appointmentService.partialUpdate(appointmentDTO);
+        // Get the current appointment to check for status changes
+        if (appointmentDTO.getStatus() != null) {
+            Optional<AppointmentDTO> existingAppointmentOpt = appointmentService.findOne(id);
 
-        return ResponseUtil.wrapOrNotFound(
-            result,
-            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString())
-        );
+            if (existingAppointmentOpt.isPresent()) {
+                AppointmentDTO existingAppointment = existingAppointmentOpt.get();
+
+                // Only admins can change appointment status
+                boolean isStatusChange = !Objects.equals(existingAppointment.getStatus(), appointmentDTO.getStatus());
+
+                if (isStatusChange && !isCurrentUserAdmin()) {
+                    throw new BadRequestAlertException(
+                        "Only administrators can change appointment status",
+                        ENTITY_NAME,
+                        "statuschangenotallowed"
+                    );
+                }
+            }
+        }
+
+        try {
+            Optional<AppointmentDTO> result = appointmentService.partialUpdate(appointmentDTO);
+
+            return ResponseUtil.wrapOrNotFound(
+                result,
+                HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString())
+            );
+        } catch (IllegalStateException e) {
+            throw new BadRequestAlertException(e.getMessage(), ENTITY_NAME, "updateerror");
+        }
     }
 
     /**
@@ -182,10 +238,14 @@ public class AppointmentResource {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAppointment(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Appointment : {}", id);
-        appointmentService.delete(id);
-        return ResponseEntity.noContent()
-            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
-            .build();
+        try {
+            appointmentService.delete(id);
+            return ResponseEntity.noContent()
+                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
+                .build();
+        } catch (IllegalStateException e) {
+            throw new BadRequestAlertException(e.getMessage(), ENTITY_NAME, "deleteerror");
+        }
     }
 
     /**
@@ -200,15 +260,12 @@ public class AppointmentResource {
     public ResponseEntity<AppointmentDTO> approveAppointment(@PathVariable("id") Long id) {
         LOG.debug("REST request to approve Appointment : {}", id);
         LOG.info("Approving appointment with ID: {}", id);
-        
+
         Optional<AppointmentDTO> result = appointmentService.approveAppointment(id);
-        
+
         if (result.isPresent()) {
             LOG.info("Successfully approved appointment: {}", result.get());
-            return ResponseUtil.wrapOrNotFound(
-                result,
-                HeaderUtil.createAlert(applicationName, "Appointment approved", id.toString())
-            );
+            return ResponseUtil.wrapOrNotFound(result, HeaderUtil.createAlert(applicationName, "Appointment approved", id.toString()));
         } else {
             LOG.warn("Failed to approve appointment with ID: {}", id);
             return ResponseUtil.wrapOrNotFound(
@@ -223,12 +280,12 @@ public class AppointmentResource {
      * This is a workaround for testing.
      */
     @GetMapping("/{id}/approve-test")
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<Void> approveAppointmentTest(@PathVariable("id") Long id) {
         LOG.info("REST request to test approve Appointment : {}", id);
-        
+
         Optional<AppointmentDTO> result = appointmentService.approveAppointment(id);
-        
+
         if (result.isPresent()) {
             LOG.info("Test: Successfully approved appointment: {}", result.get());
             // Redirect to the appointments page
@@ -242,5 +299,47 @@ public class AppointmentResource {
             headers.add("Location", "/appointment");
             return ResponseEntity.status(302).headers(headers).build();
         }
+    }
+
+    /**
+     * {@code GET  /appointments/:id/cancel} : Cancel an existing appointment.
+     *
+     * @param id the id of the appointment to cancel.
+     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     */
+    @GetMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancelAppointment(@PathVariable("id") Long id) {
+        LOG.debug("REST request to cancel Appointment : {}", id);
+
+        try {
+            Optional<AppointmentDTO> appointmentOpt = appointmentService.findOne(id);
+
+            if (appointmentOpt.isPresent()) {
+                AppointmentDTO appointment = appointmentOpt.get();
+                appointment.setStatus(AppointmentStatus.CANCELLED);
+
+                // Only admins can cancel any appointment
+                // Non-admin users are restricted by the 24-hour policy in the service layer
+                appointmentService.update(appointment);
+
+                // Redirect to the appointments page
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Location", "/appointment");
+                return ResponseEntity.status(302).headers(headers).build();
+            } else {
+                throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
+            }
+        } catch (IllegalStateException e) {
+            throw new BadRequestAlertException(e.getMessage(), ENTITY_NAME, "cancelerror");
+        }
+    }
+
+    /**
+     * Check if current user has admin role.
+     *
+     * @return true if the current user has admin authority, false otherwise.
+     */
+    private boolean isCurrentUserAdmin() {
+        return SecurityUtils.hasCurrentUserAnyOfAuthorities(AuthoritiesConstants.ADMIN);
     }
 }

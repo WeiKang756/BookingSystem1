@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Button, Col, FormText, Row } from 'reactstrap';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Button, Col, FormText, Row, Alert } from 'reactstrap';
 import { Translate, ValidatedField, ValidatedForm, translate } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -11,11 +11,13 @@ import { getUsers } from 'app/modules/administration/user-management/user-manage
 import { getEntities as getServices } from 'app/entities/service/service.reducer';
 import { AppointmentStatus } from 'app/shared/model/enumerations/appointment-status.model';
 import { createEntity, getEntity, reset, updateEntity } from './appointment.reducer';
+import { hasAnyAuthority } from 'app/shared/auth/private-route';
+import { AUTHORITIES } from 'app/config/constants';
 
 export const AppointmentUpdate = () => {
   const dispatch = useAppDispatch();
-
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { id } = useParams<'id'>();
   const isNew = id === undefined;
@@ -27,6 +29,14 @@ export const AppointmentUpdate = () => {
   const updating = useAppSelector(state => state.appointment.updating);
   const updateSuccess = useAppSelector(state => state.appointment.updateSuccess);
   const appointmentStatusValues = Object.keys(AppointmentStatus);
+  const account = useAppSelector(state => state.authentication.account);
+  const isAdmin = hasAnyAuthority(account.authorities, [AUTHORITIES.ADMIN]);
+
+  const [errorMessage, setErrorMessage] = useState('');
+  const searchParams = new URLSearchParams(location.search);
+  const serviceIdFromUrl = searchParams.get('serviceId');
+  const startTimeFromUrl = searchParams.get('startTime');
+  const endTimeFromUrl = searchParams.get('endTime');
 
   const handleClose = () => {
     navigate(`/appointment${location.search}`);
@@ -56,6 +66,17 @@ export const AppointmentUpdate = () => {
     values.startTime = convertDateTimeToServer(values.startTime);
     values.endTime = convertDateTimeToServer(values.endTime);
 
+    // For new appointments by regular users, always set status to REQUESTED
+    if (isNew && !isAdmin) {
+      values.status = 'REQUESTED';
+    }
+
+    // For existing appointments, ensure non-admins can't change status
+    if (!isNew && !isAdmin && appointmentEntity.status !== values.status) {
+      setErrorMessage('Only administrators can change appointment status');
+      return;
+    }
+
     const entity = {
       ...appointmentEntity,
       ...values,
@@ -70,20 +91,29 @@ export const AppointmentUpdate = () => {
     }
   };
 
-  const defaultValues = () =>
-    isNew
-      ? {
-          startTime: displayDefaultDateTime(),
-          endTime: displayDefaultDateTime(),
-          status: 'REQUESTED',
-        }
-      : {
-          ...appointmentEntity,
-          startTime: convertDateTimeFromServer(appointmentEntity.startTime),
-          endTime: convertDateTimeFromServer(appointmentEntity.endTime),
-          user: appointmentEntity?.user?.id,
-          service: appointmentEntity?.service?.id,
-        };
+  const defaultValues = () => {
+    if (isNew) {
+      // If values are passed via URL, use them for the form
+      const defaultStartTime = startTimeFromUrl ? convertDateTimeFromServer(startTimeFromUrl) : displayDefaultDateTime();
+      const defaultEndTime = endTimeFromUrl ? convertDateTimeFromServer(endTimeFromUrl) : displayDefaultDateTime();
+
+      return {
+        startTime: defaultStartTime,
+        endTime: defaultEndTime,
+        status: 'REQUESTED',
+        user: account.id,
+        service: serviceIdFromUrl || '',
+      };
+    } else {
+      return {
+        ...appointmentEntity,
+        startTime: convertDateTimeFromServer(appointmentEntity.startTime),
+        endTime: convertDateTimeFromServer(appointmentEntity.endTime),
+        user: appointmentEntity?.user?.id,
+        service: appointmentEntity?.service?.id,
+      };
+    }
+  };
 
   return (
     <div>
@@ -99,102 +129,130 @@ export const AppointmentUpdate = () => {
           {loading ? (
             <p>Loading...</p>
           ) : (
-            <ValidatedForm defaultValues={defaultValues()} onSubmit={saveEntity}>
-              {!isNew ? (
+            <>
+              {errorMessage && (
+                <Alert color="danger" className="mb-3">
+                  {errorMessage}
+                </Alert>
+              )}
+              <ValidatedForm defaultValues={defaultValues()} onSubmit={saveEntity}>
+                {!isNew ? (
+                  <ValidatedField
+                    name="id"
+                    required
+                    readOnly
+                    id="appointment-id"
+                    label={translate('global.field.id')}
+                    validate={{ required: true }}
+                  />
+                ) : null}
                 <ValidatedField
-                  name="id"
-                  required
-                  readOnly
-                  id="appointment-id"
-                  label={translate('global.field.id')}
-                  validate={{ required: true }}
+                  label={translate('simpleBookingSystemApp.appointment.startTime')}
+                  id="appointment-startTime"
+                  name="startTime"
+                  data-cy="startTime"
+                  type="datetime-local"
+                  placeholder="YYYY-MM-DD HH:mm"
+                  validate={{
+                    required: { value: true, message: translate('entity.validation.required') },
+                  }}
                 />
-              ) : null}
-              <ValidatedField
-                label={translate('simpleBookingSystemApp.appointment.startTime')}
-                id="appointment-startTime"
-                name="startTime"
-                data-cy="startTime"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-                validate={{
-                  required: { value: true, message: translate('entity.validation.required') },
-                }}
-              />
-              <ValidatedField
-                label={translate('simpleBookingSystemApp.appointment.endTime')}
-                id="appointment-endTime"
-                name="endTime"
-                data-cy="endTime"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-                validate={{
-                  required: { value: true, message: translate('entity.validation.required') },
-                }}
-              />
-              <ValidatedField
-                label={translate('simpleBookingSystemApp.appointment.status')}
-                id="appointment-status"
-                name="status"
-                data-cy="status"
-                type="select"
-              >
-                {appointmentStatusValues.map(appointmentStatus => (
-                  <option value={appointmentStatus} key={appointmentStatus}>
-                    {translate(`simpleBookingSystemApp.AppointmentStatus.${appointmentStatus}`)}
-                  </option>
-                ))}
-              </ValidatedField>
-              <ValidatedField
-                id="appointment-user"
-                name="user"
-                data-cy="user"
-                label={translate('simpleBookingSystemApp.appointment.user')}
-                type="select"
-                required
-              >
-                <option value="" key="0" />
-                {users
-                  ? users.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.login}
-                      </option>
-                    ))
-                  : null}
-              </ValidatedField>
-              <FormText>
-                <Translate contentKey="entity.validation.required">This field is required.</Translate>
-              </FormText>
-              <ValidatedField
-                id="appointment-service"
-                name="service"
-                data-cy="service"
-                label={translate('simpleBookingSystemApp.appointment.service')}
-                type="select"
-              >
-                <option value="" key="0" />
-                {services
-                  ? services.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.name}
-                      </option>
-                    ))
-                  : null}
-              </ValidatedField>
-              <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/appointment" replace color="info">
-                <FontAwesomeIcon icon="arrow-left" />
+                <ValidatedField
+                  label={translate('simpleBookingSystemApp.appointment.endTime')}
+                  id="appointment-endTime"
+                  name="endTime"
+                  data-cy="endTime"
+                  type="datetime-local"
+                  placeholder="YYYY-MM-DD HH:mm"
+                  validate={{
+                    required: { value: true, message: translate('entity.validation.required') },
+                  }}
+                />
+                <ValidatedField
+                  label={translate('simpleBookingSystemApp.appointment.status')}
+                  id="appointment-status"
+                  name="status"
+                  data-cy="status"
+                  type="select"
+                  disabled={!isAdmin}
+                >
+                  {appointmentStatusValues.map(appointmentStatus => (
+                    <option value={appointmentStatus} key={appointmentStatus}>
+                      {translate(`simpleBookingSystemApp.AppointmentStatus.${appointmentStatus}`)}
+                    </option>
+                  ))}
+                </ValidatedField>
+                {!isAdmin && (
+                  <FormText color="muted" className="mb-3">
+                    Only administrators can change the appointment status.
+                  </FormText>
+                )}
+                <ValidatedField
+                  id="appointment-user"
+                  name="user"
+                  data-cy="user"
+                  label={translate('simpleBookingSystemApp.appointment.user')}
+                  type="select"
+                  required
+                  disabled={!isAdmin && !isNew}
+                >
+                  <option value="" key="0" />
+                  {users
+                    ? users.map(otherEntity => (
+                        <option value={otherEntity.id} key={otherEntity.id} selected={!isAdmin && !isNew && account.id === otherEntity.id}>
+                          {otherEntity.login}
+                        </option>
+                      ))
+                    : null}
+                </ValidatedField>
+                <FormText>
+                  <Translate contentKey="entity.validation.required">This field is required.</Translate>
+                </FormText>
+                <ValidatedField
+                  id="appointment-service"
+                  name="service"
+                  data-cy="service"
+                  label={translate('simpleBookingSystemApp.appointment.service')}
+                  type="select"
+                >
+                  <option value="" key="0" />
+                  {services
+                    ? services.map(otherEntity => (
+                        <option
+                          value={otherEntity.id}
+                          key={otherEntity.id}
+                          selected={serviceIdFromUrl && serviceIdFromUrl === otherEntity.id.toString()}
+                        >
+                          {otherEntity.name}
+                        </option>
+                      ))
+                    : null}
+                </ValidatedField>
+                <div className="mt-4">
+                  {isNew && (
+                    <Alert color="info">
+                      <small>
+                        Note: Your booking request will require administrator approval before it is confirmed. You will receive a
+                        confirmation email once approved.
+                      </small>
+                    </Alert>
+                  )}
+                </div>
+                <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/appointment" replace color="info">
+                  <FontAwesomeIcon icon="arrow-left" />
+                  &nbsp;
+                  <span className="d-none d-md-inline">
+                    <Translate contentKey="entity.action.back">Back</Translate>
+                  </span>
+                </Button>
                 &nbsp;
-                <span className="d-none d-md-inline">
-                  <Translate contentKey="entity.action.back">Back</Translate>
-                </span>
-              </Button>
-              &nbsp;
-              <Button color="primary" id="save-entity" data-cy="entityCreateSaveButton" type="submit" disabled={updating}>
-                <FontAwesomeIcon icon="save" />
-                &nbsp;
-                <Translate contentKey="entity.action.save">Save</Translate>
-              </Button>
-            </ValidatedForm>
+                <Button color="primary" id="save-entity" data-cy="entityCreateSaveButton" type="submit" disabled={updating}>
+                  <FontAwesomeIcon icon="save" />
+                  &nbsp;
+                  <Translate contentKey="entity.action.save">Save</Translate>
+                </Button>
+              </ValidatedForm>
+            </>
           )}
         </Col>
       </Row>

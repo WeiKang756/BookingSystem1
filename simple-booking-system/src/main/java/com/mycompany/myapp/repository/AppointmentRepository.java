@@ -1,6 +1,7 @@
 package com.mycompany.myapp.repository;
 
 import com.mycompany.myapp.domain.Appointment;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -42,4 +43,40 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         "select appointment from Appointment appointment left join fetch appointment.user left join fetch appointment.service where appointment.id =:id"
     )
     Optional<Appointment> findOneWithToOneRelationships(@Param("id") Long id);
+
+    /**
+     * Count overlapping appointments for a given time range.
+     * Two appointments overlap if one starts during the other or ends during the other.
+     *
+     * @param startTime the start time of the appointment to check.
+     * @param endTime the end time of the appointment to check.
+     * @return the number of overlapping appointments.
+     */
+    @Query(
+        "SELECT COUNT(a) FROM Appointment a WHERE " +
+        "a.status != 'CANCELLED' AND " +
+        "((a.startTime < :endTime AND a.endTime > :startTime))"
+    )
+    long countOverlappingAppointments(@Param("startTime") Instant startTime, @Param("endTime") Instant endTime);
+
+    /**
+     * Count overlapping appointments for a given time range, excluding the appointment with the given id.
+     * Two appointments overlap if one starts during the other or ends during the other.
+     *
+     * @param startTime the start time of the appointment to check.
+     * @param endTime the end time of the appointment to check.
+     * @param appointmentId the id of the appointment to exclude from the check.
+     * @return the number of overlapping appointments.
+     */
+    @Query(
+        "SELECT COUNT(a) FROM Appointment a WHERE " +
+        "a.status != 'CANCELLED' AND " +
+        "a.id != :appointmentId AND " +
+        "((a.startTime < :endTime AND a.endTime > :startTime))"
+    )
+    long countOverlappingAppointmentsExcludingSelf(
+        @Param("startTime") Instant startTime,
+        @Param("endTime") Instant endTime,
+        @Param("appointmentId") Long appointmentId
+    );
 }
