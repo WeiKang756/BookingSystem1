@@ -37,6 +37,10 @@ public class Appointment implements Serializable {
     @Column(name = "status", nullable = false)
     private AppointmentStatus status;
 
+    @Lob
+    @Column(name = "special_needs")
+    private String specialNeeds;
+
     @ManyToOne(optional = false)
     @NotNull
     private User user;
@@ -98,6 +102,19 @@ public class Appointment implements Serializable {
         this.status = status;
     }
 
+    public String getSpecialNeeds() {
+        return this.specialNeeds;
+    }
+
+    public Appointment specialNeeds(String specialNeeds) {
+        this.setSpecialNeeds(specialNeeds);
+        return this;
+    }
+
+    public void setSpecialNeeds(String specialNeeds) {
+        this.specialNeeds = specialNeeds;
+    }
+
     public User getUser() {
         return this.user;
     }
@@ -151,6 +168,7 @@ public class Appointment implements Serializable {
             ", startTime='" + getStartTime() + "'" +
             ", endTime='" + getEndTime() + "'" +
             ", status='" + getStatus() + "'" +
+            ", specialNeeds='" + getSpecialNeeds() + "'" +
             "}";
     }
 }

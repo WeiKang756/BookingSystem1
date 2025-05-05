@@ -23,6 +23,8 @@ public class AppointmentDTO implements Serializable {
     @NotNull
     private AppointmentStatus status;
 
+    private String specialNeeds;
+
     @NotNull
     private UserDTO user;
 
@@ -58,6 +60,14 @@ public class AppointmentDTO implements Serializable {
 
     public void setStatus(AppointmentStatus status) {
         this.status = status;
+    }
+
+    public String getSpecialNeeds() {
+        return specialNeeds;
+    }
+
+    public void setSpecialNeeds(String specialNeeds) {
+        this.specialNeeds = specialNeeds;
     }
 
     public UserDTO getUser() {
@@ -105,6 +115,7 @@ public class AppointmentDTO implements Serializable {
             ", startTime='" + getStartTime() + "'" +
             ", endTime='" + getEndTime() + "'" +
             ", status='" + getStatus() + "'" +
+            ", specialNeeds='" + getSpecialNeeds() + "'" +
             ", user=" + getUser() +
             ", service=" + getService() +
             "}";

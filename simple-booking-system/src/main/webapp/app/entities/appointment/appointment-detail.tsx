@@ -197,6 +197,17 @@ export const AppointmentDetail = () => {
                 </Col>
                 <Col md="8">{appointmentEntity.service ? appointmentEntity.service.name : ''}</Col>
               </Row>
+              {appointmentEntity.specialNeeds && (
+                <Row className="mt-3">
+                  <Col md="4" className="fw-bold">
+                    <FontAwesomeIcon icon="info-circle" className="me-2" />
+                    <Translate contentKey="simpleBookingSystemApp.appointment.specialNeeds">Special Needs</Translate>
+                  </Col>
+                  <Col md="8">
+                    <div className="p-2 bg-light rounded">{appointmentEntity.specialNeeds}</div>
+                  </Col>
+                </Row>
+              )}
             </CardBody>
           </Card>
 

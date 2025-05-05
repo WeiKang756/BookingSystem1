@@ -2,8 +2,8 @@
   padding: 1.5rem 0;
 
   .status-badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -21,6 +21,11 @@
     &.status-cancelled {
       background-color: #f8d7da;
       color: #842029;
+    }
+
+    &.status-requested {
+      background-color: #fff3cd;
+      color: #664d03;
     }
   }
 

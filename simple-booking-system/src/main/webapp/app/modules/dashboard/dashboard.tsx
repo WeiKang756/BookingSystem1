@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Row, Col, Card, CardBody, CardTitle, Button, Alert } from 'reactstrap';
+import { Row, Col, Card, CardBody, CardTitle, Button, Alert, Badge } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faUserCog, faList, faChartLine, faUsers, faCog } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCalendarAlt,
+  faUserCog,
+  faList,
+  faChartLine,
+  faUsers,
+  faCog,
+  faCheck,
+  faTimes,
+  faExclamationTriangle,
+} from '@fortawesome/free-solid-svg-icons';
 import { useAppSelector, useAppDispatch } from 'app/config/store';
 import { getEntities as getAppointments } from 'app/entities/appointment/appointment.reducer';
 import { getEntities as getServices } from 'app/entities/service/service.reducer';
@@ -18,6 +28,7 @@ const Dashboard = () => {
   const isAdmin = hasAnyAuthority(account.authorities, [AUTHORITIES.ADMIN]);
 
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [pendingApprovalAppointments, setPendingApprovalAppointments] = useState([]);
 
   useEffect(() => {
     dispatch(getAppointments({}));
@@ -28,9 +39,11 @@ const Dashboard = () => {
     // Filter appointments - for regular users, show only their appointments
     // For admins, show all appointments or recent ones
     const now = new Date().toISOString();
+
+    // Find upcoming appointments (SCHEDULED status)
     const filtered = appointmentList.filter(appointment => {
       if (isAdmin) {
-        return appointment.startTime > now;
+        return appointment.startTime > now && appointment.status === 'SCHEDULED';
       } else {
         return appointment.startTime > now && appointment.user.login === account.login;
       }
@@ -41,7 +54,32 @@ const Dashboard = () => {
 
     // Take only the first 5
     setUpcomingAppointments(filtered.slice(0, 5));
+
+    // For admins, also show appointments pending approval
+    if (isAdmin) {
+      const pendingApproval = appointmentList.filter(appointment => appointment.status === 'REQUESTED');
+
+      // Sort by creation date (newer first)
+      pendingApproval.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
+      setPendingApprovalAppointments(pendingApproval.slice(0, 5));
+    }
   }, [appointmentList, account, isAdmin]);
+
+  const getStatusBadgeClass = status => {
+    switch (status) {
+      case 'SCHEDULED':
+        return 'status-scheduled';
+      case 'COMPLETED':
+        return 'status-completed';
+      case 'CANCELLED':
+        return 'status-cancelled';
+      case 'REQUESTED':
+        return 'status-requested';
+      default:
+        return '';
+    }
+  };
 
   return (
     <div className="dashboard-container">
@@ -99,6 +137,59 @@ const Dashboard = () => {
         </Col>
       </Row>
 
+      {/* Admin Only: Pending Approval Section */}
+      {isAdmin && pendingApprovalAppointments.length > 0 && (
+        <Row className="mb-4">
+          <Col md={12}>
+            <Card className="border-warning shadow-sm">
+              <CardBody>
+                <CardTitle tag="h5">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="me-2 text-warning" />
+                  Appointments Pending Approval ({pendingApprovalAppointments.length})
+                </CardTitle>
+                <div className="appointments-list">
+                  {pendingApprovalAppointments.map(appointment => (
+                    <div key={appointment.id} className="appointment-item p-3 mb-2 border border-warning rounded">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h6 className="mb-1">{appointment.service?.name || 'No Service Selected'}</h6>
+                          <p className="text-muted mb-0 small">
+                            {new Date(appointment.startTime).toLocaleString()} - {new Date(appointment.endTime).toLocaleTimeString()}
+                          </p>
+                          <p className="text-muted mb-0 small">
+                            <strong>Client:</strong> {appointment.user.login}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="status-badge status-requested">REQUESTED</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 d-flex">
+                        <a href={`api/appointments/${appointment.id}/approve-test`}>
+                          <Button color="success" size="sm" className="me-2">
+                            <FontAwesomeIcon icon={faCheck} className="me-1" /> Approve
+                          </Button>
+                        </a>
+                        <a href={`api/appointments/${appointment.id}/cancel`}>
+                          <Button color="danger" size="sm">
+                            <FontAwesomeIcon icon={faTimes} className="me-1" /> Reject
+                          </Button>
+                        </a>
+                        <Link to={`/appointment/${appointment.id}`} className="ms-auto">
+                          <Button color="outline-primary" size="sm">
+                            Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
       <Row>
         {/* Upcoming Appointments Section */}
         <Col md={8} className="mb-4">
@@ -126,7 +217,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div>
-                          <span className={`status-badge status-${appointment.status.toLowerCase()}`}>{appointment.status}</span>
+                          <span className={`status-badge ${getStatusBadgeClass(appointment.status)}`}>{appointment.status}</span>
                         </div>
                       </div>
                       <div className="mt-2">
@@ -136,11 +227,11 @@ const Dashboard = () => {
                           </Button>
                         </Link>
                         {appointment.status === 'SCHEDULED' && (
-                          <Link to={`/appointment/${appointment.id}/delete`} className="ms-2">
+                          <a href={`api/appointments/${appointment.id}/cancel`} className="ms-2">
                             <Button size="sm" color="outline-danger">
                               Cancel
                             </Button>
-                          </Link>
+                          </a>
                         )}
                       </div>
                     </div>
@@ -182,8 +273,8 @@ const Dashboard = () => {
                     <p className="mb-0 fs-4">{serviceList.length}</p>
                   </div>
                   <div className="stat-item mb-3 p-3 border rounded">
-                    <h6 className="mb-1">Upcoming Appointments</h6>
-                    <p className="mb-0 fs-4">{upcomingAppointments.length}</p>
+                    <h6 className="mb-1">Pending Approvals</h6>
+                    <p className="mb-0 fs-4">{appointmentList.filter(a => a.status === 'REQUESTED').length}</p>
                   </div>
                 </div>
                 <Link to="/admin/metrics">

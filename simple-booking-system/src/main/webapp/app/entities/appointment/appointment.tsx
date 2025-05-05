@@ -307,12 +307,26 @@ export const Appointment = () => {
                   <FontAwesomeIcon icon={getSortIconByFieldName('status')} />
                 </th>
                 <th>
-                  <Translate contentKey="simpleBookingSystemApp.appointment.user">User</Translate> <FontAwesomeIcon icon="sort" />
+                  <span className="d-flex">
+                    <Translate contentKey="simpleBookingSystemApp.appointment.service">Service</Translate>{' '}
+                    <FontAwesomeIcon icon={getSortIconByFieldName('service.name')} />
+                  </span>
+                </th>
+                {isAdmin && (
+                  <th>
+                    <span className="d-flex">
+                      <Translate contentKey="simpleBookingSystemApp.appointment.user">User</Translate>
+                    </span>
+                  </th>
+                )}
+                <th>
+                  <span className="d-flex">
+                    <Translate contentKey="simpleBookingSystemApp.appointment.specialNeeds">Special Needs</Translate>
+                  </span>
                 </th>
                 <th>
-                  <Translate contentKey="simpleBookingSystemApp.appointment.service">Service</Translate> <FontAwesomeIcon icon="sort" />
+                  <Translate contentKey="simpleBookingSystemApp.appointment.actions">Actions</Translate>
                 </th>
-                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -328,9 +342,19 @@ export const Appointment = () => {
                   </td>
                   <td>{appointment.endTime ? <TextFormat type="date" value={appointment.endTime} format={APP_DATE_FORMAT} /> : null}</td>
                   <td>{getStatusBadge(appointment.status)}</td>
-                  <td>{appointment.user ? appointment.user.login : ''}</td>
                   <td>{appointment.service ? <Link to={`/service/${appointment.service.id}`}>{appointment.service.name}</Link> : ''}</td>
-                  <td className="text-center">
+                  {isAdmin && <td>{appointment.user ? appointment.user.login : ''}</td>}
+                  <td>
+                    {appointment.specialNeeds ? (
+                      <div className="text-truncate" style={{ maxWidth: '150px' }} id={`specialNeeds-${appointment.id}`}>
+                        {appointment.specialNeeds}
+                        <UncontrolledTooltip target={`specialNeeds-${appointment.id}`}>{appointment.specialNeeds}</UncontrolledTooltip>
+                      </div>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td className="text-end">
                     <div className="d-flex justify-content-center gap-2">
                       <Button tag={Link} to={`/appointment/${appointment.id}`} color="info" size="sm" id={`view-${appointment.id}`}>
                         <FontAwesomeIcon icon={faEye} />

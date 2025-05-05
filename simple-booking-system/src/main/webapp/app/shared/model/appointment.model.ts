@@ -8,6 +8,7 @@ export interface IAppointment {
   startTime?: dayjs.Dayjs;
   endTime?: dayjs.Dayjs;
   status?: keyof typeof AppointmentStatus;
+  specialNeeds?: string | null;
   user?: IUser;
   service?: IService | null;
 }

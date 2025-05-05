@@ -2,7 +2,8 @@
 entity Appointment {
 startTime Instant required,
 endTime Instant required,
-status AppointmentStatus required
+status AppointmentStatus required,
+specialNeeds TextBlob // Added for special needs
 }
 entity Service {
 name String required minlength(3) maxlength(50),
@@ -22,4 +23,6 @@ Appointment{service(name)} to Service
 service Appointment, Service with serviceClass
 paginate Appointment, Service with pagination
 dto Appointment, Service with mapstruct
-No changes were necessary to the JDL. The updated user story adds details about the application's behavior and UI, but it doesn't introduce new entities or relationships, or modify existing ones.  The core data model remains the same.  Features like email notifications, cancellation logic, preventing overlapping appointments, and the admin approval workflow will be implemented in the application code, not the JDL.
+**Explanation of Changes:**
+The only change made to the JDL is the addition of the `specialNeeds` field to the `Appointment` entity. This field is of type `TextBlob` which allows for longer text input, suitable for describing specific needs.
+All other aspects of the user story (email notifications, cancellation logic, preventing overlapping appointments, admin approval workflow, UI design, etc.) are outside the scope of the JDL and will be implemented in the application code itself.  The JDL defines the data model, not the business logic or user interface.  Therefore, no other changes to the JDL are required based on the updated user story.

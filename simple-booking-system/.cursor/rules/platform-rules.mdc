@@ -1,7 +1,7 @@
 ```json
 {
   "name": "Online Appointment Booking Platform",
-  "description": "Guides the AI to understand and generate code for an online appointment booking platform, focusing on customer self-service and admin approval workflows, with modern and interactive UI/UX guidelines.",
+  "description": "Guides the AI to understand and generate code for an online appointment booking platform with admin approval and special needs accommodation, focusing on a user-friendly and efficient booking process.",
   "triggers": [
     {
       "type": "file_extension",
@@ -9,11 +9,11 @@
     },
     {
       "type": "file_content",
-      "contains": ["appointment", "booking", "schedule", "calendar", "availability", "customer", "admin", "confirmation", "cancellation", "time slot", "service"]
+      "contains": ["appointment", "booking", "schedule", "calendar", "availability", "confirmation", "cancellation", "special needs", "admin approval", "customer", "time slot"]
     },
     {
       "type": "prompt_content",
-      "contains": ["online booking", "appointment scheduling", "booking management", "calendar view", "admin approval", "customer self-service"]
+      "contains": ["online booking", "appointment scheduling", "admin panel", "special needs accommodation", "booking management",  "calendar view", "time slot selection"]
     }
   ],
   "actions": [
@@ -21,44 +21,38 @@
       "type": "set_context",
       "context": {
         "domain": "Online Appointment Booking",
-        "purpose": "Enabling customers to book appointments online and allowing admins to manage booking requests.",
+        "purpose": "Facilitating online appointment booking with admin approval and special needs considerations.",
         "features": [
           "Time Slot Management",
           "Booking Request Submission",
+          "Special Needs Specification",
           "Admin Approval Workflow",
-          "Automated Email Confirmations (post-approval)",
+          "Automated Email Confirmation (post-approval)",
           "Cancellation Management (24-hour window)",
-          "Service Management",
-          "Customer Account Management",
-          "Admin Panel for Booking Management",
+          "Booking Modification (Admin only)",
           "Search and Filtering Appointments",
-          "Calendar Integration"
+          "User Account Management",
+          "Admin Panel for Booking Management"
         ],
         "target_audience": ["Customers", "Administrators"],
-        "business_rules": {
-          "overlap": "Bookings should not overlap.",
-          "confirmation": "Confirmation emails are sent only after admin approval.",
-          "cancellation": "Cancellations are allowed up to 24 hours before the appointment time.",
-          "approval": "Booking requests require admin approval before confirmation.",
-          "modification": "Only admins can modify booking status."
-        },
         "ui_ux_guidelines": {
           "design_system": "Use a consistent and modern design system (e.g., Material Design, Fluent Design, or a custom one) that aligns with the chosen framework's best practices.",
           "responsiveness": "Ensure the UI is fully responsive across different devices (desktops, tablets, mobile phones).",
-          "interactivity": "Incorporate interactive elements like modals, tooltips, drag-and-drop, and real-time updates to enhance user engagement.",
-          "calendar_view": "Utilize a clear and intuitive calendar view for displaying available time slots.",
+          "interactivity": "Incorporate interactive elements like modals, tooltips, and real-time updates for available time slots to enhance user engagement.",
+          "calendar_view": "Utilize a clear and interactive calendar view for displaying and selecting available time slots.",
           "accessibility": "Follow accessibility guidelines (WCAG) to ensure the platform is usable by people with disabilities.",
           "user_flow": "Design intuitive user flows that minimize the number of steps required to complete tasks.",
           "performance": "Optimize the UI for fast loading times and smooth performance.",
-          "feedback": "Provide clear and immediate feedback to user actions (e.g., loading indicators, success messages).",
+          "feedback": "Provide clear and immediate feedback to user actions (e.g., loading indicators, success/error messages).",
           "consistency": "Maintain consistent styling and behavior across all pages and components.",
-          "modern_aesthetics": "Utilize modern UI patterns, clean layouts, and a visually appealing color palette."
+          "modern_aesthetics": "Utilize modern UI patterns, clean layouts, and a visually appealing color palette.",
+          "distinct_card_sections": "Use distinct card sections for grouping related information within the appointment details component, improving readability and organization."
         }
       }
     },
     {
-      "type": "add_instruction",
-      "instruction": "When generating UI code or suggestions, prioritize responsiveness, interactivity, and a modern aesthetic, particularly focusing on a clear and intuitive calendar view. Ensure the UI aligns with the specified design system and accessibility guidelines. Focus on creating intuitive user flows and providing clear feedback to user actions.  Implement the 24-hour cancellation window and admin approval workflow accurately. Optimize for performance and maintain consistency across the platform. When generating backend code, ensure strict adherence to the business rules regarding booking overlaps, confirmation emails, cancellations, and admin-only modification of booking status."
+        "type":"add_instruction",
+        "instruction":"When generating UI code or suggestions, prioritize responsiveness, interactivity, and a modern aesthetic. Ensure the UI aligns with the specified design system and accessibility guidelines. Focus on creating intuitive user flows, providing clear feedback to user actions, and using a clear calendar view for time slot selection.  Implement distinct card sections for information grouping within appointment details. Optimize for performance and maintain consistency across the platform. When generating backend code, ensure that booking overlaps are prevented, confirmations are sent only after admin approval, cancellations are allowed within the 24-hour window, and only admins can modify booking statuses. Focus on speed and efficiency."
     }
   ]
 }
