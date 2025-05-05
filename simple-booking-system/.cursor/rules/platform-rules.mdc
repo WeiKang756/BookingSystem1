@@ -1,12 +1,7 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 ```json
 {
-  "name": "Simple Online Booking System",
-  "description": "Guides the AI to generate code for a simple online booking system, focusing on user convenience, robust booking management, and clear communication.",
+  "name": "Online Appointment Booking Platform",
+  "description": "Guides the AI to understand and generate code for an online appointment booking platform, enabling customers to schedule appointments and administrators to manage them, with modern and interactive UI/UX guidelines.",
   "triggers": [
     {
       "type": "file_extension",
@@ -14,54 +9,56 @@ alwaysApply: false
     },
     {
       "type": "file_content",
-      "contains": ["booking", "appointment", "schedule", "calendar", "availability", "time slot", "confirmation", "cancellation", "customer", "service"]
+      "contains": ["appointment", "booking", "schedule", "calendar", "availability", "customer", "admin", "confirmation", "cancellation", "time slot", "service"]
     },
     {
       "type": "prompt_content",
-      "contains": ["online booking", "appointment scheduling", "booking system", "manage appointments", "calendar view", "booking confirmation", "cancel appointment"]
+      "contains": ["online booking", "appointment scheduling", "booking management", "calendar view", "time slot selection", "customer booking", "admin approval", "booking confirmation", "appointment cancellation"]
     }
   ],
   "actions": [
     {
       "type": "set_context",
       "context": {
-        "domain": "Online Booking System",
-        "purpose": "Enabling customers to easily schedule appointments online.",
+        "domain": "Online Appointment Booking",
+        "purpose": "Enabling customers to self-schedule appointments and administrators to manage bookings.",
         "features": [
           "Time Slot Management",
-          "Booking Creation",
-          "Booking Confirmation (Email)",
-          "Booking Cancellation",
-          "Appointment Management",
-          "Availability Search",
-          "User Authentication",
-          "Input Validation",
-          "Prevent Double Booking"
+          "Booking Request Submission",
+          "Admin Approval Workflow",
+          "Automated Email Confirmation (post-approval)",
+          "Appointment Cancellation (up to 24 hours prior)",
+          "Service Management",
+          "Customer Account Management",
+          "Search and Filtering Appointments",
+          "Calendar View Integration",
+          "Double Booking Prevention"
         ],
-        "target_audience": "Customers",
+        "target_audience": ["Customers", "Administrators"],
         "ui_ux_guidelines": {
           "design_system": "Use a consistent and modern design system (e.g., Material Design, Fluent Design, or a custom one) that aligns with the chosen framework's best practices.",
           "responsiveness": "Ensure the UI is fully responsive across different devices (desktops, tablets, mobile phones).",
-          "interactivity": "Incorporate interactive elements like calendar selection, modals for booking details, and real-time availability updates.",
+          "interactivity": "Incorporate interactive elements like modals, tooltips, and real-time updates to enhance user engagement.  A clear and concise booking form should be used.",
+          "data_visualization": "Use a calendar view to display available time slots clearly.",
           "accessibility": "Follow accessibility guidelines (WCAG) to ensure the platform is usable by people with disabilities.",
-          "user_flow": "Design intuitive user flows for viewing availability, selecting a time slot, filling out booking details, and managing existing bookings.",
-          "performance": "Optimize the UI for fast loading times and smooth performance, especially for calendar interactions.",
-          "feedback": "Provide clear and immediate feedback to user actions (e.g., loading indicators, success/error messages upon booking/cancellation).",
+          "user_flow": "Design intuitive user flows that minimize the number of steps required to complete tasks.",
+          "performance": "Optimize the UI for fast loading times and smooth performance.",
+          "feedback": "Provide clear and immediate feedback to user actions (e.g., loading indicators, success messages, confirmation pages).",
           "consistency": "Maintain consistent styling and behavior across all pages and components.",
           "modern_aesthetics": "Utilize modern UI patterns, clean layouts, and a visually appealing color palette."
         },
         "business_rules": {
-          "no_overlap": "Bookings should not overlap.",
-          "confirmation_email": "A confirmation email should be sent upon successful booking.",
-          "cancellation_window": "Cancellations are allowed up to 24 hours before the appointment time."
+          "booking_overlap": "Bookings should not overlap.",
+          "confirmation_email": "A confirmation email should be sent to the customer *only* after admin approval.",
+          "cancellation_policy": "Cancellations should be allowed up to 24 hours before the appointment time.",
+          "admin_approval": "Booking requests must be approved by an admin before they are confirmed."
         }
       }
     },
     {
         "type":"add_instruction",
-        "instruction":"When generating UI code, prioritize a user-friendly calendar view for selecting time slots, a clear and concise booking form, and a confirmation page with essential details.  Ensure the UI is responsive and adheres to accessibility guidelines.  For backend code, focus on preventing double bookings, enforcing the 24-hour cancellation window, and ensuring email confirmations are sent reliably. Implement robust input validation to handle invalid data gracefully."
+        "instruction":"When generating UI code or suggestions, prioritize responsiveness, interactivity, and a modern aesthetic. Ensure the UI aligns with the specified design system and accessibility guidelines. Focus on creating intuitive user flows and providing clear feedback to user actions. Implement a clear calendar view for time slot selection and a concise booking form. Optimize for performance and maintain consistency across the platform. When generating backend code, ensure that the booking logic adheres to the defined business rules, including preventing double bookings, enforcing cancellation policies, and requiring admin approval before confirmation. Focus on speed and efficiency."
     }
   ]
 }
-
-
+```

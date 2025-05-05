@@ -118,7 +118,7 @@ public class MailService {
         log.debug("Sending password reset email to '{}'", user.getEmail());
         sendEmailFromTemplate(user, "mail/passwordResetEmail", "email.reset.title");
     }
-    
+
     @Async
     public void sendAppointmentConfirmationEmail(User user, AppointmentDTO appointment) {
         log.debug("Sending appointment confirmation email to '{}'", user.getEmail());
@@ -126,32 +126,31 @@ public class MailService {
             log.debug("Email doesn't exist for user '{}'", user.getLogin());
             return;
         }
-        
+
         Locale locale = Locale.forLanguageTag(user.getLangKey());
         Context context = new Context(locale);
         context.setVariable(USER, user);
         context.setVariable(APPOINTMENT, appointment);
         context.setVariable(BASE_URL, jHipsterProperties.getMail().getBaseUrl());
-        
+
         // Format the date and time for better readability
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a")
-            .withZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a").withZone(ZoneId.systemDefault());
         String formattedDateTime = formatter.format(appointment.getStartTime());
         context.setVariable(APPOINTMENT_DATETIME, formattedDateTime);
-        
+
         // Add service name if available
         if (appointment.getService() != null) {
             context.setVariable(SERVICE_NAME, appointment.getService().getName());
         } else {
             context.setVariable(SERVICE_NAME, "Not specified");
         }
-        
+
         String content = templateEngine.process("mail/appointmentConfirmationEmail", context);
         String subject = messageSource.getMessage("email.appointment.confirmation.title", null, locale);
-        
+
         sendEmail(user.getEmail(), subject, content, false, true);
     }
-    
+
     @Async
     public void sendAppointmentCancellationEmail(User user, AppointmentDTO appointment) {
         log.debug("Sending appointment cancellation email to '{}'", user.getEmail());
@@ -159,29 +158,28 @@ public class MailService {
             log.debug("Email doesn't exist for user '{}'", user.getLogin());
             return;
         }
-        
+
         Locale locale = Locale.forLanguageTag(user.getLangKey());
         Context context = new Context(locale);
         context.setVariable(USER, user);
         context.setVariable(APPOINTMENT, appointment);
         context.setVariable(BASE_URL, jHipsterProperties.getMail().getBaseUrl());
-        
+
         // Format the date and time for better readability
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a")
-            .withZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a").withZone(ZoneId.systemDefault());
         String formattedDateTime = formatter.format(appointment.getStartTime());
         context.setVariable(APPOINTMENT_DATETIME, formattedDateTime);
-        
+
         // Add service name if available
         if (appointment.getService() != null) {
             context.setVariable(SERVICE_NAME, appointment.getService().getName());
         } else {
             context.setVariable(SERVICE_NAME, "Not specified");
         }
-        
+
         String content = templateEngine.process("mail/appointmentCancellationEmail", context);
         String subject = messageSource.getMessage("email.appointment.cancellation.title", null, locale);
-        
+
         sendEmail(user.getEmail(), subject, content, false, true);
     }
 }

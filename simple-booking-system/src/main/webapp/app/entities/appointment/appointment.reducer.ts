@@ -70,13 +70,11 @@ export const approveAppointment = createAsyncThunk(
   'appointment/approve',
   async (id: string | number, thunkAPI) => {
     try {
-      // console.log(`Approving appointment ${id}`);
       // First try the PUT endpoint
       const requestUrl = `${apiUrl}/${id}/approve`;
       try {
         // Use axios as it has auth interceptors configured
         const result = await axios.put<IAppointment>(requestUrl, {});
-        // console.log('Approved appointment successfully', result);
         thunkAPI.dispatch(getEntities({}));
         return result;
       } catch (putError) {
@@ -84,12 +82,79 @@ export const approveAppointment = createAsyncThunk(
         // Fallback to GET endpoint
         const fallbackUrl = `${apiUrl}/${id}/approve-test`;
         const fallbackResult = await axios.get<IAppointment>(fallbackUrl);
-        // console.log('Approved appointment via fallback', fallbackResult);
         thunkAPI.dispatch(getEntities({}));
         return fallbackResult;
       }
     } catch (error) {
       console.error('Error approving appointment:', error);
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const rejectAppointment = createAsyncThunk(
+  'appointment/reject',
+  async (id: string | number, thunkAPI) => {
+    try {
+      // First try the PUT endpoint
+      const requestUrl = `${apiUrl}/${id}/reject`;
+      try {
+        const result = await axios.put<IAppointment>(requestUrl, {});
+        thunkAPI.dispatch(getEntities({}));
+        return result;
+      } catch (putError) {
+        console.warn('PUT rejection failed, trying GET fallback', putError);
+        // Fallback to GET endpoint
+        const fallbackUrl = `${apiUrl}/${id}/reject-test`;
+        const fallbackResult = await axios.get<IAppointment>(fallbackUrl);
+        thunkAPI.dispatch(getEntities({}));
+        return fallbackResult;
+      }
+    } catch (error) {
+      console.error('Error rejecting appointment:', error);
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const cancelAppointment = createAsyncThunk(
+  'appointment/cancel',
+  async (id: string | number, thunkAPI) => {
+    try {
+      const requestUrl = `${apiUrl}/${id}/cancel`;
+      const result = await axios.put<IAppointment>(requestUrl, {});
+      thunkAPI.dispatch(getEntities({}));
+      return result;
+    } catch (error) {
+      console.error('Error canceling appointment:', error);
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const completeAppointment = createAsyncThunk(
+  'appointment/complete',
+  async (id: string | number, thunkAPI) => {
+    try {
+      // First try the PUT endpoint
+      const requestUrl = `${apiUrl}/${id}/complete`;
+      try {
+        const result = await axios.put<IAppointment>(requestUrl, {});
+        thunkAPI.dispatch(getEntities({}));
+        return result;
+      } catch (putError) {
+        console.warn('PUT completion failed, trying GET fallback', putError);
+        // Fallback to GET endpoint
+        const fallbackUrl = `${apiUrl}/${id}/complete-test`;
+        const fallbackResult = await axios.get<IAppointment>(fallbackUrl);
+        thunkAPI.dispatch(getEntities({}));
+        return fallbackResult;
+      }
+    } catch (error) {
+      console.error('Error completing appointment:', error);
       return thunkAPI.rejectWithValue(error);
     }
   },
@@ -128,6 +193,21 @@ export const AppointmentSlice = createEntitySlice({
         state.loading = false;
         state.entity = action.payload.data;
       })
+      .addCase(rejectAppointment.fulfilled, (state, action) => {
+        state.updating = false;
+        state.loading = false;
+        state.entity = action.payload.data;
+      })
+      .addCase(cancelAppointment.fulfilled, (state, action) => {
+        state.updating = false;
+        state.loading = false;
+        state.entity = action.payload.data;
+      })
+      .addCase(completeAppointment.fulfilled, (state, action) => {
+        state.updating = false;
+        state.loading = false;
+        state.entity = action.payload.data;
+      })
       .addMatcher(isFulfilled(getEntities), (state, action) => {
         const { data, headers } = action.payload;
 
@@ -149,11 +229,23 @@ export const AppointmentSlice = createEntitySlice({
         state.updateSuccess = false;
         state.loading = true;
       })
-      .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity, approveAppointment), state => {
-        state.errorMessage = null;
-        state.updateSuccess = false;
-        state.updating = true;
-      });
+      .addMatcher(
+        isPending(
+          createEntity,
+          updateEntity,
+          partialUpdateEntity,
+          deleteEntity,
+          approveAppointment,
+          rejectAppointment,
+          cancelAppointment,
+          completeAppointment,
+        ),
+        state => {
+          state.errorMessage = null;
+          state.updateSuccess = false;
+          state.updating = true;
+        },
+      );
   },
 });
 

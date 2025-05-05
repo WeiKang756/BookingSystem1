@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Button, Table } from 'reactstrap';
-import { JhiItemCount, JhiPagination, TextFormat, Translate, getPaginationState } from 'react-jhipster';
+import { Button, Table, Badge } from 'reactstrap';
+import { JhiItemCount, JhiPagination, TextFormat, Translate, getSortState, translate, getPaginationState } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortDown, faSortUp, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faSort, faSortDown, faSortUp, faCheck, faTimes, faBan, faFlag } from '@fortawesome/free-solid-svg-icons';
 import { APP_DATE_FORMAT } from 'app/config/constants';
 import { ASC, DESC, ITEMS_PER_PAGE, SORT } from 'app/shared/util/pagination.constants';
 import { overridePaginationStateWithQueryParams } from 'app/shared/util/entity-utils';
@@ -11,7 +11,7 @@ import { useAppDispatch, useAppSelector } from 'app/config/store';
 import { hasAnyAuthority } from 'app/shared/auth/private-route';
 import { AUTHORITIES } from 'app/config/constants';
 
-import { getEntities, approveAppointment } from './appointment.reducer';
+import { getEntities, approveAppointment, rejectAppointment, cancelAppointment, completeAppointment } from './appointment.reducer';
 
 export const Appointment = () => {
   const dispatch = useAppDispatch();
@@ -95,6 +95,8 @@ export const Appointment = () => {
     return order === ASC ? faSortUp : faSortDown;
   };
 
+  const isAdmin = hasAnyAuthority([AUTHORITIES.ADMIN], account.authorities);
+
   const handleApprove = (id: string) => {
     setErrorMessage('');
     // Use window.location to navigate to the test endpoint directly
@@ -103,7 +105,70 @@ export const Appointment = () => {
     // After a short delay, navigate back to appointments
     setTimeout(() => {
       window.location.href = '/appointment';
-    }, 1000);
+    }, 2000);
+  };
+
+  const handleReject = (id: string) => {
+    setErrorMessage('');
+    window.location.href = `/api/appointments/${id}/reject-test`;
+    setTimeout(() => {
+      window.location.href = '/appointment';
+    }, 2000);
+  };
+
+  const handleCancel = (id: string) => {
+    setErrorMessage('');
+    dispatch(cancelAppointment(id))
+      .unwrap()
+      .then(() => {
+        handleSyncList();
+      })
+      .catch(error => {
+        setErrorMessage(error.message || 'An error occurred while canceling the appointment');
+      });
+  };
+
+  const handleComplete = (id: string) => {
+    setErrorMessage('');
+    window.location.href = `/api/appointments/${id}/complete-test`;
+    setTimeout(() => {
+      window.location.href = '/appointment';
+    }, 2000);
+  };
+
+  // Return status badge with appropriate color
+  const getStatusBadge = status => {
+    let color;
+    switch (status) {
+      case 'REQUESTED':
+        color = 'warning';
+        break;
+      case 'SCHEDULED':
+        color = 'success';
+        break;
+      case 'COMPLETED':
+        color = 'info';
+        break;
+      case 'CANCELLED':
+        color = 'danger';
+        break;
+      default:
+        color = 'secondary';
+    }
+    return (
+      <Badge color={color} pill>
+        <Translate contentKey={`simpleBookingSystemApp.AppointmentStatus.${status}`} />
+      </Badge>
+    );
+  };
+
+  // Check if the appointment is within the cancellation window (24 hours)
+  const isWithinCancellationWindow = startTime => {
+    const appointmentTime = new Date(startTime);
+    const now = new Date();
+    // Add 24 hours to current time
+    const cancellationDeadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    return appointmentTime > cancellationDeadline;
   };
 
   return (
@@ -131,7 +196,7 @@ export const Appointment = () => {
 
       <div className="table-responsive">
         {appointmentList && appointmentList.length > 0 ? (
-          <Table responsive>
+          <Table responsive className="table-striped">
             <thead>
               <tr>
                 <th className="hand" onClick={sort('id')}>
@@ -171,9 +236,7 @@ export const Appointment = () => {
                     {appointment.startTime ? <TextFormat type="date" value={appointment.startTime} format={APP_DATE_FORMAT} /> : null}
                   </td>
                   <td>{appointment.endTime ? <TextFormat type="date" value={appointment.endTime} format={APP_DATE_FORMAT} /> : null}</td>
-                  <td>
-                    <Translate contentKey={`simpleBookingSystemApp.AppointmentStatus.${appointment.status}`} />
-                  </td>
+                  <td>{getStatusBadge(appointment.status)}</td>
                   <td>{appointment.user ? appointment.user.login : ''}</td>
                   <td>{appointment.service ? <Link to={`/service/${appointment.service.id}`}>{appointment.service.name}</Link> : ''}</td>
                   <td className="text-end">
@@ -196,24 +259,59 @@ export const Appointment = () => {
                           <Translate contentKey="entity.action.edit">Edit</Translate>
                         </span>
                       </Button>
-                      <Button
-                        onClick={() =>
-                          (window.location.href = `/appointment/${appointment.id}/delete?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`)
-                        }
-                        color="danger"
-                        size="sm"
-                        data-cy="entityDeleteButton"
-                      >
-                        <FontAwesomeIcon icon="trash" />{' '}
-                        <span className="d-none d-md-inline">
-                          <Translate contentKey="entity.action.delete">Delete</Translate>
-                        </span>
-                      </Button>
-                      {hasAnyAuthority([AUTHORITIES.ADMIN], account.authorities) && appointment.status === 'REQUESTED' && (
-                        <Button onClick={() => handleApprove(appointment.id)} color="success" size="sm" data-cy="entityApproveButton">
-                          <FontAwesomeIcon icon={faCheck} />{' '}
+
+                      {/* Admin Actions for Requested Appointments */}
+                      {isAdmin && appointment.status === 'REQUESTED' && (
+                        <>
+                          <Button onClick={() => handleApprove(appointment.id)} color="success" size="sm" data-cy="entityApproveButton">
+                            <FontAwesomeIcon icon={faCheck} />{' '}
+                            <span className="d-none d-md-inline">
+                              <Translate contentKey="entity.action.approve">Approve</Translate>
+                            </span>
+                          </Button>
+                          <Button onClick={() => handleReject(appointment.id)} color="danger" size="sm" data-cy="entityRejectButton">
+                            <FontAwesomeIcon icon={faTimes} />{' '}
+                            <span className="d-none d-md-inline">
+                              <Translate contentKey="entity.action.reject">Reject</Translate>
+                            </span>
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Complete button for scheduled appointments (admin only) */}
+                      {isAdmin && appointment.status === 'SCHEDULED' && (
+                        <Button onClick={() => handleComplete(appointment.id)} color="info" size="sm" data-cy="entityCompleteButton">
+                          <FontAwesomeIcon icon={faFlag} />{' '}
                           <span className="d-none d-md-inline">
-                            <Translate contentKey="entity.action.approve">Approve</Translate>
+                            <Translate contentKey="entity.action.complete">Complete</Translate>
+                          </span>
+                        </Button>
+                      )}
+
+                      {/* Cancel button for appointments that can be cancelled */}
+                      {(appointment.status === 'SCHEDULED' || appointment.status === 'REQUESTED') &&
+                        isWithinCancellationWindow(appointment.startTime) && (
+                          <Button onClick={() => handleCancel(appointment.id)} color="warning" size="sm" data-cy="entityCancelButton">
+                            <FontAwesomeIcon icon={faBan} />{' '}
+                            <span className="d-none d-md-inline">
+                              <Translate contentKey="entity.action.cancel">Cancel</Translate>
+                            </span>
+                          </Button>
+                        )}
+
+                      {/* Delete button only for admins */}
+                      {isAdmin && (
+                        <Button
+                          onClick={() =>
+                            (window.location.href = `/appointment/${appointment.id}/delete?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`)
+                          }
+                          color="danger"
+                          size="sm"
+                          data-cy="entityDeleteButton"
+                        >
+                          <FontAwesomeIcon icon="trash" />{' '}
+                          <span className="d-none d-md-inline">
+                            <Translate contentKey="entity.action.delete">Delete</Translate>
                           </span>
                         </Button>
                       )}

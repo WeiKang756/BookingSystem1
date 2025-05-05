@@ -96,9 +96,11 @@
       "approve": "Approve",
       "back": "Back",
       "cancel": "Cancel",
+      "complete": "Complete",
       "delete": "Delete",
       "edit": "Edit",
       "open": "Open",
+      "reject": "Reject",
       "save": "Save",
       "view": "View",
       "show": "Show {{otherEntity}}"

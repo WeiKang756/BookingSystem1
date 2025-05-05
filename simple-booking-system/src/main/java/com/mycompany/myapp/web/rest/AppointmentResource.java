@@ -1,14 +1,17 @@
 package com.mycompany.myapp.web.rest;
 
+import com.mycompany.myapp.domain.enumeration.AppointmentStatus;
 import com.mycompany.myapp.repository.AppointmentRepository;
+import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.service.AppointmentService;
 import com.mycompany.myapp.service.dto.AppointmentDTO;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
-import com.mycompany.myapp.security.AuthoritiesConstants;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -62,6 +65,10 @@ public class AppointmentResource {
         if (appointmentDTO.getId() != null) {
             throw new BadRequestAlertException("A new appointment cannot already have an ID", ENTITY_NAME, "idexists");
         }
+
+        // Force new appointments to be in REQUESTED status
+        appointmentDTO.setStatus(AppointmentStatus.REQUESTED);
+
         appointmentDTO = appointmentService.save(appointmentDTO);
         return ResponseEntity.created(new URI("/api/appointments/" + appointmentDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, appointmentDTO.getId().toString()))
@@ -93,6 +100,17 @@ public class AppointmentResource {
 
         if (!appointmentRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
+        }
+
+        // Get existing appointment to check if status is being changed
+        Optional<AppointmentDTO> existingAppointment = appointmentService.findOne(id);
+        if (existingAppointment.isPresent() && !existingAppointment.get().getStatus().equals(appointmentDTO.getStatus())) {
+            // Status is being modified - check authorization
+            throw new BadRequestAlertException(
+                "Status changes must be performed through appropriate endpoints",
+                ENTITY_NAME,
+                "statuschange.restricted"
+            );
         }
 
         appointmentDTO = appointmentService.update(appointmentDTO);
@@ -127,6 +145,19 @@ public class AppointmentResource {
 
         if (!appointmentRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
+        }
+
+        // Check if status is being changed
+        if (appointmentDTO.getStatus() != null) {
+            Optional<AppointmentDTO> existingAppointment = appointmentService.findOne(id);
+            if (existingAppointment.isPresent() && !existingAppointment.get().getStatus().equals(appointmentDTO.getStatus())) {
+                // Status is being modified - check authorization
+                throw new BadRequestAlertException(
+                    "Status changes must be performed through appropriate endpoints",
+                    ENTITY_NAME,
+                    "statuschange.restricted"
+                );
+            }
         }
 
         Optional<AppointmentDTO> result = appointmentService.partialUpdate(appointmentDTO);
@@ -200,21 +231,55 @@ public class AppointmentResource {
     public ResponseEntity<AppointmentDTO> approveAppointment(@PathVariable("id") Long id) {
         LOG.debug("REST request to approve Appointment : {}", id);
         LOG.info("Approving appointment with ID: {}", id);
-        
+
         Optional<AppointmentDTO> result = appointmentService.approveAppointment(id);
-        
+
         if (result.isPresent()) {
             LOG.info("Successfully approved appointment: {}", result.get());
-            return ResponseUtil.wrapOrNotFound(
-                result,
-                HeaderUtil.createAlert(applicationName, "Appointment approved", id.toString())
-            );
+            return ResponseUtil.wrapOrNotFound(result, HeaderUtil.createAlert(applicationName, "Appointment approved", id.toString()));
         } else {
             LOG.warn("Failed to approve appointment with ID: {}", id);
             return ResponseUtil.wrapOrNotFound(
                 result,
                 HeaderUtil.createAlert(applicationName, "Appointment not found or not in REQUESTED state", id.toString())
             );
+        }
+    }
+
+    /**
+     * {@code PUT  /appointments/:id/reject} : Reject a REQUESTED appointment.
+     *
+     * @param id the id of the appointment to reject.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated appointmentDTO,
+     * or with status {@code 404 (Not Found)} if the appointmentDTO is not found.
+     */
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<AppointmentDTO> rejectAppointment(@PathVariable("id") Long id) {
+        LOG.debug("REST request to reject Appointment : {}", id);
+
+        Optional<AppointmentDTO> result = appointmentService.rejectAppointment(id);
+
+        return ResponseUtil.wrapOrNotFound(result, HeaderUtil.createAlert(applicationName, "Appointment rejected", id.toString()));
+    }
+
+    /**
+     * {@code PUT  /appointments/:id/cancel} : Cancel an appointment.
+     *
+     * @param id the id of the appointment to cancel.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated appointmentDTO,
+     * or with status {@code 400 (Bad Request)} if cancellation window has passed.
+     */
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<AppointmentDTO> cancelAppointment(@PathVariable("id") Long id) {
+        LOG.debug("REST request to cancel Appointment : {}", id);
+
+        try {
+            Optional<AppointmentDTO> result = appointmentService.cancelAppointment(id);
+
+            return ResponseUtil.wrapOrNotFound(result, HeaderUtil.createAlert(applicationName, "Appointment cancelled", id.toString()));
+        } catch (IllegalStateException e) {
+            throw new BadRequestAlertException(e.getMessage(), ENTITY_NAME, "cancellation.toolate");
         }
     }
 
@@ -226,9 +291,9 @@ public class AppointmentResource {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Void> approveAppointmentTest(@PathVariable("id") Long id) {
         LOG.info("REST request to test approve Appointment : {}", id);
-        
+
         Optional<AppointmentDTO> result = appointmentService.approveAppointment(id);
-        
+
         if (result.isPresent()) {
             LOG.info("Test: Successfully approved appointment: {}", result.get());
             // Redirect to the appointments page
@@ -242,5 +307,59 @@ public class AppointmentResource {
             headers.add("Location", "/appointment");
             return ResponseEntity.status(302).headers(headers).build();
         }
+    }
+
+    /**
+     * {@code GET  /appointments/:id/reject-test} : Test endpoint to reject appointments.
+     * This is a workaround for testing.
+     */
+    @GetMapping("/{id}/reject-test")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Void> rejectAppointmentTest(@PathVariable("id") Long id) {
+        LOG.info("REST request to test reject Appointment : {}", id);
+
+        Optional<AppointmentDTO> result = appointmentService.rejectAppointment(id);
+
+        // Redirect to the appointments page
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Location", "/appointment");
+        return ResponseEntity.status(302).headers(headers).build();
+    }
+
+    /**
+     * {@code PUT  /appointments/:id/complete} : Mark a SCHEDULED appointment as COMPLETED.
+     *
+     * @param id the id of the appointment to mark as completed.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated appointmentDTO,
+     * or with status {@code 404 (Not Found)} if the appointmentDTO is not found.
+     */
+    @PutMapping("/{id}/complete")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<AppointmentDTO> completeAppointment(@PathVariable("id") Long id) {
+        LOG.debug("REST request to complete Appointment : {}", id);
+
+        Optional<AppointmentDTO> result = appointmentService.completeAppointment(id);
+
+        return ResponseUtil.wrapOrNotFound(
+            result,
+            HeaderUtil.createAlert(applicationName, "Appointment marked as completed", id.toString())
+        );
+    }
+
+    /**
+     * {@code GET  /appointments/:id/complete-test} : Test endpoint to mark appointments as completed.
+     * This is a workaround for testing.
+     */
+    @GetMapping("/{id}/complete-test")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Void> completeAppointmentTest(@PathVariable("id") Long id) {
+        LOG.info("REST request to test complete Appointment : {}", id);
+
+        Optional<AppointmentDTO> result = appointmentService.completeAppointment(id);
+
+        // Redirect to the appointments page
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Location", "/appointment");
+        return ResponseEntity.status(302).headers(headers).build();
     }
 }

@@ -22,9 +22,4 @@ Appointment{service(name)} to Service
 service Appointment, Service with serviceClass
 paginate Appointment, Service with pagination
 dto Appointment, Service with mapstruct
-// No changes to entities, relationships, or options were requested.
-// The only change is the addition of the REQUESTED status to the AppointmentStatus enum
-// to reflect the workflow described in the updated user story.  This addresses the
-// admin approval requirement.  Further implementation details (email notifications,
-// cancellation logic, preventing overlaps) will be handled in the application code,
-// not in the JDL.
+No changes were required to the JDL based on the updated user story.  The addition of the `REQUESTED` status in the original prompt already addressed the core change related to the admin approval workflow.  The other details mentioned in the user story (email notifications, cancellation logic, preventing overlaps, admin panel) are implementation details that will be handled in the application code, not the JDL.  The JDL defines the data model, and the updated user story doesn't require changes to that model.
