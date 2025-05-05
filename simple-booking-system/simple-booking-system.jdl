@@ -10,7 +10,7 @@ description TextBlob,
 price BigDecimal required min(0)
 }
 enum AppointmentStatus {
-REQUESTED, // New status for initial booking request
+REQUESTED,
 SCHEDULED,
 COMPLETED,
 CANCELLED
@@ -22,4 +22,4 @@ Appointment{service(name)} to Service
 service Appointment, Service with serviceClass
 paginate Appointment, Service with pagination
 dto Appointment, Service with mapstruct
-No changes were required to the JDL based on the updated user story.  The addition of the `REQUESTED` status in the original prompt already addressed the core change related to the admin approval workflow.  The other details mentioned in the user story (email notifications, cancellation logic, preventing overlaps, admin panel) are implementation details that will be handled in the application code, not the JDL.  The JDL defines the data model, and the updated user story doesn't require changes to that model.
+No changes were necessary to the JDL. The updated user story adds details about the application's behavior and UI, but it doesn't introduce new entities or relationships, or modify existing ones.  The core data model remains the same.  Features like email notifications, cancellation logic, preventing overlapping appointments, and the admin approval workflow will be implemented in the application code, not the JDL.

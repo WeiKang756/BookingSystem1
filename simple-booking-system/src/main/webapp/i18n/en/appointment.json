@@ -21,8 +21,18 @@
       "startTime": "Start Time",
       "endTime": "End Time",
       "status": "Status",
+      "details": "Appointment Details",
       "user": "User",
-      "service": "Service"
+      "service": "Service",
+      "actions": "Available Actions",
+      "cancellationPolicy": "Cancellation Policy",
+      "cancellationExplanation": "Appointments can be cancelled up to 24 hours before the scheduled time.",
+      "cancellationTimeRemaining": "Time remaining to cancel:",
+      "cancellationNotAllowed": "This appointment cannot be cancelled (less than 24 hours remaining).",
+      "pendingApproval": "Pending Admin Approval",
+      "filter": "Filter by Status",
+      "filterAll": "All",
+      "adminInstruction": "As an administrator, you can approve, reject, or complete appointments."
     }
   }
 }

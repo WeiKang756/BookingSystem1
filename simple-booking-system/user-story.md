@@ -7,7 +7,7 @@
 **Business Logic**:
 
 - Bookings should not overlap.
-- A confirmation email should be sent to the customer _only_ after admin approval.
+- A confirmation email should be sent to the customer only after admin approval.
 - Cancellations should be allowed up to 24 hours before the appointment time.
 - Booking requests must be approved by an admin before they are confirmed.
 - Only admins can modify the booking status.
@@ -16,7 +16,7 @@
 
 1. Users can view available time slots for a given service.
 2. Users can select a time slot and submit a booking request.
-3. Users receive a confirmation email _only_ after their booking is approved by an admin.
+3. Users receive a confirmation email only after their booking is approved by an admin.
 4. The system prevents double-booking of time slots.
 5. The system handles invalid input gracefully.
 6. Users can cancel appointments up to 24 hours in advance.
@@ -47,3 +47,4 @@
 - A user account section to manage bookings.
 - Responsive design for various screen sizes.
 - (Admin) An admin panel for managing booking requests.
+- Distinct card sections for different information groups within the appointment details component.

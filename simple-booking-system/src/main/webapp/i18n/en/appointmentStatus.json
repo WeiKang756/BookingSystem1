@@ -2,10 +2,10 @@
   "simpleBookingSystemApp": {
     "AppointmentStatus": {
       "null": "",
-      "REQUESTED": "REQUESTED",
-      "SCHEDULED": "SCHEDULED",
-      "COMPLETED": "COMPLETED",
-      "CANCELLED": "CANCELLED"
+      "REQUESTED": "Pending Approval",
+      "SCHEDULED": "Confirmed",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
     }
   }
 }

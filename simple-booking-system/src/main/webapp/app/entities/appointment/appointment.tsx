@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Button, Table, Badge } from 'reactstrap';
+import { Button, Table, Badge, Card, CardBody, Row, Col, UncontrolledTooltip, Alert } from 'reactstrap';
 import { JhiItemCount, JhiPagination, TextFormat, Translate, getSortState, translate, getPaginationState } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortDown, faSortUp, faCheck, faTimes, faBan, faFlag } from '@fortawesome/free-solid-svg-icons';
+import {
+  faSort,
+  faSortDown,
+  faSortUp,
+  faCheck,
+  faTimes,
+  faBan,
+  faFlag,
+  faEye,
+  faPencilAlt,
+  faTrash,
+  faFilter,
+} from '@fortawesome/free-solid-svg-icons';
 import { APP_DATE_FORMAT } from 'app/config/constants';
 import { ASC, DESC, ITEMS_PER_PAGE, SORT } from 'app/shared/util/pagination.constants';
 import { overridePaginationStateWithQueryParams } from 'app/shared/util/entity-utils';
@@ -16,6 +28,7 @@ import { getEntities, approveAppointment, rejectAppointment, cancelAppointment, 
 export const Appointment = () => {
   const dispatch = useAppDispatch();
   const [errorMessage, setErrorMessage] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const pageLocation = useLocation();
   const navigate = useNavigate();
@@ -164,6 +177,7 @@ export const Appointment = () => {
 
   // Check if the appointment is within the cancellation window (24 hours)
   const isWithinCancellationWindow = startTime => {
+    if (!startTime) return false;
     const appointmentTime = new Date(startTime);
     const now = new Date();
     // Add 24 hours to current time
@@ -171,33 +185,110 @@ export const Appointment = () => {
     return appointmentTime > cancellationDeadline;
   };
 
+  // Filter appointments by status
+  const filteredAppointments = filterStatus ? appointmentList.filter(appointment => appointment.status === filterStatus) : appointmentList;
+
   return (
     <div>
-      <h2 id="appointment-heading" data-cy="AppointmentHeading">
+      <h2 id="appointment-heading" data-cy="AppointmentHeading" className="mb-4">
         <Translate contentKey="simpleBookingSystemApp.appointment.home.title">Appointments</Translate>
-        <div className="d-flex justify-content-end">
-          <Button className="me-2" color="info" onClick={handleSyncList} disabled={loading}>
-            <FontAwesomeIcon icon="sync" spin={loading} />{' '}
-            <Translate contentKey="simpleBookingSystemApp.appointment.home.refreshListLabel">Refresh List</Translate>
-          </Button>
-          <Link to="/appointment/new" className="btn btn-primary jh-create-entity" id="jh-create-entity" data-cy="entityCreateButton">
-            <FontAwesomeIcon icon="plus" />
-            &nbsp;
-            <Translate contentKey="simpleBookingSystemApp.appointment.home.createLabel">Create new Appointment</Translate>
-          </Link>
-        </div>
       </h2>
 
+      <Row className="mb-3">
+        <Col>
+          <div className="d-flex justify-content-end">
+            <Button className="me-2" color="info" onClick={handleSyncList} disabled={loading}>
+              <FontAwesomeIcon icon="sync" spin={loading} />{' '}
+              <Translate contentKey="simpleBookingSystemApp.appointment.home.refreshListLabel">Refresh List</Translate>
+            </Button>
+            <Link to="/appointment/new" className="btn btn-primary jh-create-entity" id="jh-create-entity" data-cy="entityCreateButton">
+              <FontAwesomeIcon icon="plus" />
+              &nbsp;
+              <Translate contentKey="simpleBookingSystemApp.appointment.home.createLabel">Create new Appointment</Translate>
+            </Link>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Status Filter */}
+      <Card className="mb-4 shadow-sm">
+        <CardBody>
+          <div className="d-flex flex-wrap align-items-center">
+            <span className="me-3">
+              <FontAwesomeIcon icon={faFilter} className="me-1" />
+              <Translate contentKey="simpleBookingSystemApp.appointment.filter">Filter by Status</Translate>:
+            </span>
+            <div className="d-flex flex-wrap gap-2">
+              <Button
+                color={filterStatus === '' ? 'primary' : 'outline-primary'}
+                size="sm"
+                onClick={() => setFilterStatus('')}
+                className="me-2"
+              >
+                <Translate contentKey="simpleBookingSystemApp.appointment.filterAll">All</Translate>
+              </Button>
+              <Button
+                color={filterStatus === 'REQUESTED' ? 'warning' : 'outline-warning'}
+                size="sm"
+                onClick={() => setFilterStatus('REQUESTED')}
+                className="me-2"
+              >
+                <Translate contentKey="simpleBookingSystemApp.AppointmentStatus.REQUESTED">Requested</Translate>
+              </Button>
+              <Button
+                color={filterStatus === 'SCHEDULED' ? 'success' : 'outline-success'}
+                size="sm"
+                onClick={() => setFilterStatus('SCHEDULED')}
+                className="me-2"
+              >
+                <Translate contentKey="simpleBookingSystemApp.AppointmentStatus.SCHEDULED">Scheduled</Translate>
+              </Button>
+              <Button
+                color={filterStatus === 'COMPLETED' ? 'info' : 'outline-info'}
+                size="sm"
+                onClick={() => setFilterStatus('COMPLETED')}
+                className="me-2"
+              >
+                <Translate contentKey="simpleBookingSystemApp.AppointmentStatus.COMPLETED">Completed</Translate>
+              </Button>
+              <Button
+                color={filterStatus === 'CANCELLED' ? 'danger' : 'outline-danger'}
+                size="sm"
+                onClick={() => setFilterStatus('CANCELLED')}
+                className="me-2"
+              >
+                <Translate contentKey="simpleBookingSystemApp.AppointmentStatus.CANCELLED">Cancelled</Translate>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
       {errorMessage && (
-        <div className="alert alert-danger" role="alert">
+        <Alert color="danger" className="mb-4" role="alert">
           {errorMessage}
+        </Alert>
+      )}
+
+      {isAdmin && (
+        <div className="mb-4">
+          <Alert color="info">
+            <div className="d-flex align-items-center">
+              <FontAwesomeIcon icon="info-circle" className="me-2" />
+              <span>
+                <Translate contentKey="simpleBookingSystemApp.appointment.adminInstruction">
+                  As an administrator, you can approve, reject, or complete appointments.
+                </Translate>
+              </span>
+            </div>
+          </Alert>
         </div>
       )}
 
       <div className="table-responsive">
-        {appointmentList && appointmentList.length > 0 ? (
-          <Table responsive className="table-striped">
-            <thead>
+        {filteredAppointments && filteredAppointments.length > 0 ? (
+          <Table responsive className="table-striped shadow-sm">
+            <thead className="bg-light">
               <tr>
                 <th className="hand" onClick={sort('id')}>
                   <Translate contentKey="simpleBookingSystemApp.appointment.id">ID</Translate>{' '}
@@ -221,12 +312,12 @@ export const Appointment = () => {
                 <th>
                   <Translate contentKey="simpleBookingSystemApp.appointment.service">Service</Translate> <FontAwesomeIcon icon="sort" />
                 </th>
-                <th />
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {appointmentList.map((appointment, i) => (
-                <tr key={`entity-${i}`} data-cy="entityTable">
+              {filteredAppointments.map((appointment, i) => (
+                <tr key={`entity-${i}`} data-cy="entityTable" className={appointment.status === 'REQUESTED' ? 'table-warning' : ''}>
                   <td>
                     <Button tag={Link} to={`/appointment/${appointment.id}`} color="link" size="sm">
                       {appointment.id}
@@ -239,82 +330,78 @@ export const Appointment = () => {
                   <td>{getStatusBadge(appointment.status)}</td>
                   <td>{appointment.user ? appointment.user.login : ''}</td>
                   <td>{appointment.service ? <Link to={`/service/${appointment.service.id}`}>{appointment.service.name}</Link> : ''}</td>
-                  <td className="text-end">
-                    <div className="btn-group flex-btn-group-container">
-                      <Button tag={Link} to={`/appointment/${appointment.id}`} color="info" size="sm" data-cy="entityDetailsButton">
-                        <FontAwesomeIcon icon="eye" />{' '}
-                        <span className="d-none d-md-inline">
-                          <Translate contentKey="entity.action.view">View</Translate>
-                        </span>
+                  <td className="text-center">
+                    <div className="d-flex justify-content-center gap-2">
+                      <Button tag={Link} to={`/appointment/${appointment.id}`} color="info" size="sm" id={`view-${appointment.id}`}>
+                        <FontAwesomeIcon icon={faEye} />
                       </Button>
-                      <Button
-                        tag={Link}
-                        to={`/appointment/${appointment.id}/edit?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`}
-                        color="primary"
-                        size="sm"
-                        data-cy="entityEditButton"
-                      >
-                        <FontAwesomeIcon icon="pencil-alt" />{' '}
-                        <span className="d-none d-md-inline">
-                          <Translate contentKey="entity.action.edit">Edit</Translate>
-                        </span>
-                      </Button>
+                      <UncontrolledTooltip target={`view-${appointment.id}`}>
+                        <Translate contentKey="entity.action.view">View</Translate>
+                      </UncontrolledTooltip>
 
                       {/* Admin Actions for Requested Appointments */}
                       {isAdmin && appointment.status === 'REQUESTED' && (
                         <>
-                          <Button onClick={() => handleApprove(appointment.id)} color="success" size="sm" data-cy="entityApproveButton">
-                            <FontAwesomeIcon icon={faCheck} />{' '}
-                            <span className="d-none d-md-inline">
-                              <Translate contentKey="entity.action.approve">Approve</Translate>
-                            </span>
+                          <Button color="success" size="sm" onClick={() => handleApprove(appointment.id)} id={`approve-${appointment.id}`}>
+                            <FontAwesomeIcon icon={faCheck} />
                           </Button>
-                          <Button onClick={() => handleReject(appointment.id)} color="danger" size="sm" data-cy="entityRejectButton">
-                            <FontAwesomeIcon icon={faTimes} />{' '}
-                            <span className="d-none d-md-inline">
-                              <Translate contentKey="entity.action.reject">Reject</Translate>
-                            </span>
+                          <UncontrolledTooltip target={`approve-${appointment.id}`}>
+                            <Translate contentKey="entity.action.approve">Approve</Translate>
+                          </UncontrolledTooltip>
+
+                          <Button color="danger" size="sm" onClick={() => handleReject(appointment.id)} id={`reject-${appointment.id}`}>
+                            <FontAwesomeIcon icon={faTimes} />
                           </Button>
+                          <UncontrolledTooltip target={`reject-${appointment.id}`}>
+                            <Translate contentKey="entity.action.reject">Reject</Translate>
+                          </UncontrolledTooltip>
                         </>
                       )}
 
                       {/* Complete button for scheduled appointments (admin only) */}
                       {isAdmin && appointment.status === 'SCHEDULED' && (
-                        <Button onClick={() => handleComplete(appointment.id)} color="info" size="sm" data-cy="entityCompleteButton">
-                          <FontAwesomeIcon icon={faFlag} />{' '}
-                          <span className="d-none d-md-inline">
+                        <>
+                          <Button color="info" size="sm" onClick={() => handleComplete(appointment.id)} id={`complete-${appointment.id}`}>
+                            <FontAwesomeIcon icon={faFlag} />
+                          </Button>
+                          <UncontrolledTooltip target={`complete-${appointment.id}`}>
                             <Translate contentKey="entity.action.complete">Complete</Translate>
-                          </span>
-                        </Button>
+                          </UncontrolledTooltip>
+                        </>
                       )}
 
                       {/* Cancel button for appointments that can be cancelled */}
                       {(appointment.status === 'SCHEDULED' || appointment.status === 'REQUESTED') &&
                         isWithinCancellationWindow(appointment.startTime) && (
-                          <Button onClick={() => handleCancel(appointment.id)} color="warning" size="sm" data-cy="entityCancelButton">
-                            <FontAwesomeIcon icon={faBan} />{' '}
-                            <span className="d-none d-md-inline">
+                          <>
+                            <Button color="warning" size="sm" onClick={() => handleCancel(appointment.id)} id={`cancel-${appointment.id}`}>
+                              <FontAwesomeIcon icon={faBan} />
+                            </Button>
+                            <UncontrolledTooltip target={`cancel-${appointment.id}`}>
                               <Translate contentKey="entity.action.cancel">Cancel</Translate>
-                            </span>
-                          </Button>
+                            </UncontrolledTooltip>
+                          </>
                         )}
 
-                      {/* Delete button only for admins */}
-                      {isAdmin && (
-                        <Button
-                          onClick={() =>
-                            (window.location.href = `/appointment/${appointment.id}/delete?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`)
-                          }
-                          color="danger"
-                          size="sm"
-                          data-cy="entityDeleteButton"
-                        >
-                          <FontAwesomeIcon icon="trash" />{' '}
-                          <span className="d-none d-md-inline">
-                            <Translate contentKey="entity.action.delete">Delete</Translate>
-                          </span>
-                        </Button>
-                      )}
+                      <Button tag={Link} to={`/appointment/${appointment.id}/edit`} color="primary" size="sm" id={`edit-${appointment.id}`}>
+                        <FontAwesomeIcon icon={faPencilAlt} />
+                      </Button>
+                      <UncontrolledTooltip target={`edit-${appointment.id}`}>
+                        <Translate contentKey="entity.action.edit">Edit</Translate>
+                      </UncontrolledTooltip>
+
+                      <Button
+                        tag={Link}
+                        to={`/appointment/${appointment.id}/delete`}
+                        color="danger"
+                        size="sm"
+                        id={`delete-${appointment.id}`}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </Button>
+                      <UncontrolledTooltip target={`delete-${appointment.id}`}>
+                        <Translate contentKey="entity.action.delete">Delete</Translate>
+                      </UncontrolledTooltip>
                     </div>
                   </td>
                 </tr>
@@ -329,8 +416,8 @@ export const Appointment = () => {
           )
         )}
       </div>
-      {totalItems ? (
-        <div className={appointmentList && appointmentList.length > 0 ? '' : 'd-none'}>
+      {filteredAppointments?.length > 0 && totalItems ? (
+        <div className={appointmentList?.length > 0 ? '' : 'd-none'}>
           <div className="justify-content-center d-flex">
             <JhiItemCount page={paginationState.activePage} total={totalItems} itemsPerPage={paginationState.itemsPerPage} i18nEnabled />
           </div>
